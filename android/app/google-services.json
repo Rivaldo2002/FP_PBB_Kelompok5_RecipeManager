@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "391843789210",
+    "project_id": "fp-recipe-manager",
+    "storage_bucket": "fp-recipe-manager.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:391843789210:android:d0e0b52bad8df916b96223",
+        "android_client_info": {
+          "package_name": "com.example.fp_recipemanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-fI-RglLUzEIXkdFsYqXw0OS38vPkbWk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
