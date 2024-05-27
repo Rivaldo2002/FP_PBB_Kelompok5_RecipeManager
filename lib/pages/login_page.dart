@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:FP_PBB_Kelompok5_RecipeManager/components/my_button.dart';
-import 'package:FP_PBB_Kelompok5_RecipeManager/components/my_textfield.dart';
-import 'package:FP_PBB_Kelompok5_RecipeManager/components/square_tile.dart';
-import 'package:FP_PBB_Kelompok5_RecipeManager/pages/home_page.dart';
+import 'package:fp_recipemanager/components/my_button.dart';
+import 'package:fp_recipemanager/components/my_textfield.dart';
+import 'package:fp_recipemanager/components/square_tile.dart';
+import 'package:fp_recipemanager/pages/home_page.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({super.key});

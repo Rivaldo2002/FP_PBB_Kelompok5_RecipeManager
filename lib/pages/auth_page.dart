@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:FP_PBB_Kelompok5_RecipeManager/pages/login_page.dart';
-import 'home_page.dart';
+import 'package:fp_recipemanager/pages/login_page.dart';
+import 'package:fp_recipemanager/pages/home_page.dart';
 
 class AuthPage extends StatelessWidget {
   const AuthPage({super.key});
