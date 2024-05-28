@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fp_recipemanager/components/my_button.dart';
 import 'package:fp_recipemanager/components/my_textfield.dart';
-import 'package:fp_recipemanager/components/square_tile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterPage extends StatefulWidget {
