@@ -1,9 +1,10 @@
+import 'package:age_calculator/age_calculator.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 import 'package:fp_recipemanager/models/user_profile.dart';
 import 'package:fp_recipemanager/services/user_profile_service.dart';
+import 'package:intl/intl.dart';
 
 class UserProfilePage extends StatefulWidget {
   @override
@@ -15,14 +16,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final UserProfileService _firestoreService = UserProfileService();
 
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _profilePictureUrlController =
-      TextEditingController();
+  final TextEditingController _profilePictureUrlController = TextEditingController();
   final TextEditingController _dateOfBirthController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _bmiController = TextEditingController();
 
   String? _selectedGender;
+  int? _calculatedAge;
 
   @override
   void initState() {
@@ -35,23 +36,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _loadUserProfile() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      UserProfile? userProfile =
-          await _firestoreService.getUserProfile(user.uid);
+      UserProfile? userProfile = await _firestoreService.getUserProfile(user.uid);
       if (userProfile != null) {
         setState(() {
           _fullNameController.text = userProfile.fullName ?? '';
-          _profilePictureUrlController.text =
-              userProfile.profilePictureUrl ?? '';
-          _dateOfBirthController.text = userProfile.dateOfBirth != null
-              ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!)
-              : '';
+          _profilePictureUrlController.text = userProfile.profilePictureUrl ?? '';
+          _dateOfBirthController.text = userProfile.dateOfBirth != null ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!) : '';
           _selectedGender = userProfile.gender;
-          _weightController.text =
-              userProfile.weight != null ? userProfile.weight.toString() : '';
-          _heightController.text =
-              userProfile.height != null ? userProfile.height.toString() : '';
-          _bmiController.text =
-              userProfile.bmi != null ? userProfile.bmi.toString() : '';
+          _weightController.text = userProfile.weight != null ? userProfile.weight.toString() : '';
+          _heightController.text = userProfile.height != null ? userProfile.height.toString() : '';
+          _bmiController.text = userProfile.bmi != null ? userProfile.bmi.toString() : '';
+          _calculatedAge = userProfile.age;
         });
       }
     }
@@ -81,8 +76,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
     if (pickedDate != null) {
       setState(() {
-        _dateOfBirthController.text =
-            DateFormat('yyyy-MM-dd').format(pickedDate);
+        _dateOfBirthController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
+        _calculatedAge = AgeCalculator.age(pickedDate).years;
       });
     }
   }
@@ -92,26 +87,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (user != null) {
       UserProfile userProfile = UserProfile(
         userId: user.uid,
-        fullName: _fullNameController.text.isNotEmpty
-            ? _fullNameController.text
-            : null,
+        fullName: _fullNameController.text.isNotEmpty ? _fullNameController.text : null,
         email: user.email!,
-        profilePictureUrl: _profilePictureUrlController.text.isNotEmpty
-            ? _profilePictureUrlController.text
-            : null,
-        dateOfBirth: _dateOfBirthController.text.isNotEmpty
-            ? DateTime.parse(_dateOfBirthController.text)
-            : null,
+        profilePictureUrl: _profilePictureUrlController.text.isNotEmpty ? _profilePictureUrlController.text : null,
+        dateOfBirth: _dateOfBirthController.text.isNotEmpty ? DateTime.parse(_dateOfBirthController.text) : null,
         gender: _selectedGender,
-        weight: _weightController.text.isNotEmpty
-            ? double.parse(_weightController.text)
-            : null,
-        height: _heightController.text.isNotEmpty
-            ? double.parse(_heightController.text)
-            : null,
-        bmi: _bmiController.text.isNotEmpty
-            ? double.parse(_bmiController.text)
-            : null,
+        weight: _weightController.text.isNotEmpty ? double.parse(_weightController.text) : null,
+        height: _heightController.text.isNotEmpty ? double.parse(_heightController.text) : null,
+        bmi: _bmiController.text.isNotEmpty ? double.parse(_bmiController.text) : null,
       );
 
       await _firestoreService.createUserProfile(userProfile);
@@ -176,15 +159,29 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 controller: _profilePictureUrlController,
                 decoration: InputDecoration(labelText: 'Profile Picture URL'),
               ),
-              TextField(
-                controller: _dateOfBirthController,
-                decoration: InputDecoration(
-                  labelText: 'Date of Birth (YYYY-MM-DD)',
-                  icon: Icon(Icons.calendar_today),
-                ),
-                readOnly: true,
-                onTap: () => _selectDate(context),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _dateOfBirthController,
+                    decoration: InputDecoration(
+                      labelText: 'Date of Birth (YYYY-MM-DD)',
+                      icon: Icon(Icons.calendar_today),
+                    ),
+                    readOnly: true,
+                    onTap: () => _selectDate(context),
+                  ),
+                  SizedBox(height: 20),
+                  if (_calculatedAge != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(40.0, 0, 0, 0),
+                      child: Text('Age: $_calculatedAge years', style: TextStyle(fontSize: 16)),
+                    ),
+                  SizedBox(height: 20),
+                ],
               ),
+
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

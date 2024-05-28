@@ -1,3 +1,5 @@
+import 'package:age_calculator/age_calculator.dart';
+
 class UserProfile {
   String userId;
   String? fullName;
@@ -47,5 +49,11 @@ class UserProfile {
       height: map['height'],
       bmi: map['bmi'],
     );
+  }
+
+  int? get age {
+    if (dateOfBirth == null) return null;
+    DateDuration duration = AgeCalculator.age(dateOfBirth!);
+    return duration.years;
   }
 }
