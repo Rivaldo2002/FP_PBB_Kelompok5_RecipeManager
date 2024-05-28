@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 class MyTextField extends StatelessWidget {
+  // Allows us to access user input
   final controller;
+
+  // Hint on what should be typed in
   final String hintText;
+
+  // Hide characters when we're typing the password
   final bool obscureText;
 
   const MyTextField({
@@ -19,17 +24,24 @@ class MyTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
+        style: TextStyle(color: Colors.white),
         decoration: InputDecoration(
-            enabledBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              borderSide: BorderSide(color: Color(0xff343434)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              borderSide: BorderSide(color: Colors.white),
             ),
-            fillColor: Colors.grey.shade200,
+            fillColor: Color(0xff191919),
             filled: true,
             hintText: hintText,
-            hintStyle: TextStyle(color: Colors.grey[500])),
+            hintStyle: TextStyle(
+                color: Color(0xff616161),
+                fontWeight: FontWeight.normal
+            )
+        ),
       ),
     );
   }

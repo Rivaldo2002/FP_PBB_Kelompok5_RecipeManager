@@ -1,39 +1,51 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fp_recipemanager/pages/login_page.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({super.key});
 
   final user = FirebaseAuth.instance.currentUser!;
 
-  // sign user out method
-  void signUserOut(BuildContext context) {
+  void signUserOut() {
     FirebaseAuth.instance.signOut();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()), // Ganti dengan halaman login yang benar
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            onPressed: () => signUserOut(context),
-            icon: Icon(Icons.logout),
-          )
+          IconButton(onPressed: signUserOut, icon: Icon(Icons.logout))
         ],
       ),
-      body: Center(
-          child: Text(
-            "LOGGED IN AS: " + user.email!,
-            style: TextStyle(fontSize: 20),
-          )),
+      body: Container(
+        color: Colors.black,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Logged In as: ",
+                style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                    fontWeight: FontWeight.normal
+                ),
+              ),
+              Text(
+                user.email!,
+                style: TextStyle(
+                    fontSize: 20*1.618,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
