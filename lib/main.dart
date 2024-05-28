@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fp_recipemanager/pages/auth_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:fp_recipemanager/pages/recipe_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: AuthPage(),
+      home: RecipePage(),
     );
   }
 }
