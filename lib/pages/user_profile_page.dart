@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:fp_recipemanager/models/user_profile.dart';
 import 'package:fp_recipemanager/services/user_profile_service.dart';
 
@@ -14,12 +15,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final UserProfileService _firestoreService = UserProfileService();
 
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _profilePictureUrlController = TextEditingController();
+  final TextEditingController _profilePictureUrlController =
+      TextEditingController();
   final TextEditingController _dateOfBirthController = TextEditingController();
-  final TextEditingController _genderController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _bmiController = TextEditingController();
+
+  String? _selectedGender;
 
   @override
   void initState() {
@@ -32,16 +35,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _loadUserProfile() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      UserProfile? userProfile = await _firestoreService.getUserProfile(user.uid);
+      UserProfile? userProfile =
+          await _firestoreService.getUserProfile(user.uid);
       if (userProfile != null) {
         setState(() {
           _fullNameController.text = userProfile.fullName ?? '';
-          _profilePictureUrlController.text = userProfile.profilePictureUrl ?? '';
-          _dateOfBirthController.text = userProfile.dateOfBirth != null ? userProfile.dateOfBirth!.toIso8601String() : '';
-          _genderController.text = userProfile.gender ?? '';
-          _weightController.text = userProfile.weight != null ? userProfile.weight.toString() : '';
-          _heightController.text = userProfile.height != null ? userProfile.height.toString() : '';
-          _bmiController.text = userProfile.bmi != null ? userProfile.bmi.toString() : '';
+          _profilePictureUrlController.text =
+              userProfile.profilePictureUrl ?? '';
+          _dateOfBirthController.text = userProfile.dateOfBirth != null
+              ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!)
+              : '';
+          _selectedGender = userProfile.gender;
+          _weightController.text =
+              userProfile.weight != null ? userProfile.weight.toString() : '';
+          _heightController.text =
+              userProfile.height != null ? userProfile.height.toString() : '';
+          _bmiController.text =
+              userProfile.bmi != null ? userProfile.bmi.toString() : '';
         });
       }
     }
@@ -62,19 +72,46 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null) {
+      setState(() {
+        _dateOfBirthController.text =
+            DateFormat('yyyy-MM-dd').format(pickedDate);
+      });
+    }
+  }
+
   void _submitProfile() async {
     User? user = _auth.currentUser;
     if (user != null) {
       UserProfile userProfile = UserProfile(
         userId: user.uid,
-        fullName: _fullNameController.text.isNotEmpty ? _fullNameController.text : null,
+        fullName: _fullNameController.text.isNotEmpty
+            ? _fullNameController.text
+            : null,
         email: user.email!,
-        profilePictureUrl: _profilePictureUrlController.text.isNotEmpty ? _profilePictureUrlController.text : null,
-        dateOfBirth: _dateOfBirthController.text.isNotEmpty ? DateTime.parse(_dateOfBirthController.text) : null,
-        gender: _genderController.text.isNotEmpty ? _genderController.text : null,
-        weight: _weightController.text.isNotEmpty ? double.parse(_weightController.text) : null,
-        height: _heightController.text.isNotEmpty ? double.parse(_heightController.text) : null,
-        bmi: _bmiController.text.isNotEmpty ? double.parse(_bmiController.text) : null,
+        profilePictureUrl: _profilePictureUrlController.text.isNotEmpty
+            ? _profilePictureUrlController.text
+            : null,
+        dateOfBirth: _dateOfBirthController.text.isNotEmpty
+            ? DateTime.parse(_dateOfBirthController.text)
+            : null,
+        gender: _selectedGender,
+        weight: _weightController.text.isNotEmpty
+            ? double.parse(_weightController.text)
+            : null,
+        height: _heightController.text.isNotEmpty
+            ? double.parse(_heightController.text)
+            : null,
+        bmi: _bmiController.text.isNotEmpty
+            ? double.parse(_bmiController.text)
+            : null,
       );
 
       await _firestoreService.createUserProfile(userProfile);
@@ -109,7 +146,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _fullNameController.dispose();
     _profilePictureUrlController.dispose();
     _dateOfBirthController.dispose();
-    _genderController.dispose();
     _bmiController.dispose();
     super.dispose();
   }
@@ -142,11 +178,42 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
               TextField(
                 controller: _dateOfBirthController,
-                decoration: InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD)'),
+                decoration: InputDecoration(
+                  labelText: 'Date of Birth (YYYY-MM-DD)',
+                  icon: Icon(Icons.calendar_today),
+                ),
+                readOnly: true,
+                onTap: () => _selectDate(context),
               ),
-              TextField(
-                controller: _genderController,
-                decoration: InputDecoration(labelText: 'Gender'),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Gender', style: TextStyle(fontSize: 16)),
+                  ListTile(
+                    title: const Text('Male'),
+                    leading: Radio<String>(
+                      value: 'Male',
+                      groupValue: _selectedGender,
+                      onChanged: (String? value) {
+                        setState(() {
+                          _selectedGender = value;
+                        });
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('Female'),
+                    leading: Radio<String>(
+                      value: 'Female',
+                      groupValue: _selectedGender,
+                      onChanged: (String? value) {
+                        setState(() {
+                          _selectedGender = value;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
               TextField(
                 controller: _weightController,
