@@ -16,37 +16,52 @@ class AddRecipePage extends StatelessWidget{
       appBar: AppBar(
         title: Text('Add Recipe'),
       ),
-      body: Padding(
+    body: SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
               controller: imageUrlController,
-              decoration: InputDecoration(labelText: 'Image Url'),
+              decoration: InputDecoration(
+                  labelText: 'Image Url',
+                  labelStyle: TextStyle(fontWeight: FontWeight.w300),
+              ),
             ),
             TextField(
               controller: titleController,
-              decoration: InputDecoration(labelText: 'Title'),
+              decoration: InputDecoration(
+                  labelText: 'Title',
+                  labelStyle: TextStyle(fontWeight: FontWeight.w300),
+              ),
             ),
             TextField(
               controller: descriptionController,
-              decoration: InputDecoration(labelText: 'Description'),
+              maxLines: 10,
+              decoration: InputDecoration(
+                labelText: 'Description',
+                floatingLabelBehavior: FloatingLabelBehavior.always, // Agar label selalu di atas
+                labelStyle: TextStyle(fontWeight: FontWeight.w300), // Mengatur ketebalan font menjadi tipis
+              ),
             ),
             TextField(
               controller: categoryController,
-              decoration: InputDecoration(labelText: 'Category Id'),
+              decoration: InputDecoration(
+                  labelText: 'Category Id',
+                labelStyle: TextStyle(fontWeight: FontWeight.w300),
+              ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 final newRecipe = Recipe(
-                  id: '',
-                  imageUrl: imageUrlController.text,
-                  title: titleController.text,
-                  description: descriptionController.text,
-                  // createdTime: DateTime.now(),
-                  categoryId: categoryController.text
+                    id: '',
+                    imageUrl: imageUrlController.text,
+                    title: titleController.text,
+                    description: descriptionController.text,
+                    // createdTime: DateTime.now(),
+                    categoryId: categoryController.text
                 );
                 _recipeService.addRecipe(newRecipe);
                 Navigator.pop(context);
@@ -56,6 +71,7 @@ class AddRecipePage extends StatelessWidget{
           ],
         ),
       ),
+    ),
     );
   }
 }

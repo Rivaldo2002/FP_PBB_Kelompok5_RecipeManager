@@ -24,45 +24,47 @@ class EditRecipePage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Edit Recipe'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: imageUrlController,
-              decoration: InputDecoration(labelText: 'Image Url'),
-            ),
-            TextField(
-              controller: titleController,
-              decoration: InputDecoration(labelText: 'Title'),
-            ),
-            TextField(
-              controller: descriptionController,
-              decoration: InputDecoration(labelText: 'Description'),
-            ),
-            TextField(
-              controller: categoryController,
-              decoration: InputDecoration(labelText: 'Category Id'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                final updatedRecipe = Recipe(
-                  id: recipe.id,
-                  imageUrl: imageUrlController.text,
-                  title: titleController.text,
-                  description: descriptionController.text,
-                  categoryId: categoryController.text,
-                  // createdTime: recipe.createdTime,
-
-                );
-                _recipeService.updateRecipe(updatedRecipe);
-                Navigator.pop(context);
-              },
-              child: Text('Save Changes'),
-            ),
-          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: imageUrlController,
+                decoration: InputDecoration(labelText: 'Image Url'),
+              ),
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(labelText: 'Title'),
+              ),
+              TextField(
+                controller: descriptionController,
+                maxLines: 10,
+                decoration: InputDecoration(labelText: 'Description'),
+              ),
+              TextField(
+                controller: categoryController,
+                decoration: InputDecoration(labelText: 'Category Id'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  final updatedRecipe = Recipe(
+                    id: recipe.id,
+                    imageUrl: imageUrlController.text,
+                    title: titleController.text,
+                    description: descriptionController.text,
+                    categoryId: categoryController.text,
+                    // createdTime: recipe.createdTime,
+                  );
+                  _recipeService.updateRecipe(updatedRecipe);
+                  Navigator.pop(context);
+                },
+                child: Text('Save Changes'),
+              ),
+            ],
+          ),
         ),
       ),
     );
