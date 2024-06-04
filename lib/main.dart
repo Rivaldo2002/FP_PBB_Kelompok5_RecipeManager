@@ -3,6 +3,8 @@ import 'package:fp_recipemanager/pages/auth_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:fp_recipemanager/pages/recipe_page.dart';
+import 'package:fp_recipemanager/pages/edit_recipe_page.dart';
+import 'package:fp_recipemanager/pages/add_recipe_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

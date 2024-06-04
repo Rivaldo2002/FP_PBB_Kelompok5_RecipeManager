@@ -6,7 +6,10 @@ class RecipeService {
   FirebaseFirestore.instance.collection('recipes');
 
   Future<void> addRecipe(Recipe recipe) {
-    return _recipesCollection.add(recipe.toMap());
+    final docRef = _recipesCollection.doc(); // Generate a new document reference with an ID
+    recipe.id = docRef.id; // Set the generated ID to the recipe
+
+    return docRef.set(recipe.toMap());
   }
 
   Future<void> updateRecipe(Recipe recipe) {
@@ -24,5 +27,11 @@ class RecipeService {
           ..id = doc.id;
       }).toList();
     });
+  }
+
+  Future<Recipe> getRecipeById(String id) async {
+    DocumentSnapshot recipeDoc = await _recipesCollection.doc(id).get();
+    return Recipe.fromMap(recipeDoc.data() as Map<String, dynamic>)
+      ..id = recipeDoc.id;
   }
 }
