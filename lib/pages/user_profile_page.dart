@@ -2,9 +2,11 @@ import 'package:age_calculator/age_calculator.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fp_recipemanager/components/profile_picture.dart';
 import 'package:fp_recipemanager/models/user_profile.dart';
 import 'package:fp_recipemanager/services/user_profile_service.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class UserProfilePage extends StatefulWidget {
   @override
@@ -16,7 +18,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final UserProfileService _firestoreService = UserProfileService();
 
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _profilePictureUrlController = TextEditingController();
   final TextEditingController _dateOfBirthController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
@@ -24,6 +25,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   String? _selectedGender;
   int? _calculatedAge;
+  String? _profilePicturePath;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -36,17 +39,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _loadUserProfile() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      UserProfile? userProfile = await _firestoreService.getUserProfile(user.uid);
+      UserProfile? userProfile =
+      await _firestoreService.getUserProfile(user.uid);
       if (userProfile != null) {
         setState(() {
           _fullNameController.text = userProfile.fullName ?? '';
-          _profilePictureUrlController.text = userProfile.profilePictureUrl ?? '';
-          _dateOfBirthController.text = userProfile.dateOfBirth != null ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!) : '';
+          _dateOfBirthController.text = userProfile.dateOfBirth != null
+              ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!)
+              : '';
           _selectedGender = userProfile.gender;
-          _weightController.text = userProfile.weight != null ? userProfile.weight.toString() : '';
-          _heightController.text = userProfile.height != null ? userProfile.height.toString() : '';
-          _bmiController.text = userProfile.bmi != null ? userProfile.bmi.toString() : '';
+          _weightController.text =
+          userProfile.weight != null ? userProfile.weight.toString() : '';
+          _heightController.text =
+          userProfile.height != null ? userProfile.height.toString() : '';
+          _bmiController.text =
+          userProfile.bmi != null ? userProfile.bmi.toString() : '';
           _calculatedAge = userProfile.age;
+          _profilePicturePath = 'profilePicture/${userProfile.userId}';
+        });
+
+        // Introduce a delay before hiding the loading spinner
+        await Future.delayed(Duration(milliseconds: 200));
+
+        setState(() {
+          _isLoading = false; // Data has been loaded
         });
       }
     }
@@ -76,7 +92,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
     if (pickedDate != null) {
       setState(() {
-        _dateOfBirthController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
+        _dateOfBirthController.text =
+            DateFormat('yyyy-MM-dd').format(pickedDate);
         _calculatedAge = AgeCalculator.age(pickedDate).years;
       });
     }
@@ -87,14 +104,24 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (user != null) {
       UserProfile userProfile = UserProfile(
         userId: user.uid,
-        fullName: _fullNameController.text.isNotEmpty ? _fullNameController.text : null,
+        fullName: _fullNameController.text.isNotEmpty
+            ? _fullNameController.text
+            : null,
         email: user.email!,
-        profilePictureUrl: _profilePictureUrlController.text.isNotEmpty ? _profilePictureUrlController.text : null,
-        dateOfBirth: _dateOfBirthController.text.isNotEmpty ? DateTime.parse(_dateOfBirthController.text) : null,
+        dateOfBirth: _dateOfBirthController.text.isNotEmpty
+            ? DateTime.parse(_dateOfBirthController.text)
+            : null,
         gender: _selectedGender,
-        weight: _weightController.text.isNotEmpty ? double.parse(_weightController.text) : null,
-        height: _heightController.text.isNotEmpty ? double.parse(_heightController.text) : null,
-        bmi: _bmiController.text.isNotEmpty ? double.parse(_bmiController.text) : null,
+        weight: _weightController.text.isNotEmpty
+            ? double.parse(_weightController.text)
+            : null,
+        height: _heightController.text.isNotEmpty
+            ? double.parse(_heightController.text)
+            : null,
+        bmi: _bmiController.text.isNotEmpty
+            ? double.parse(_bmiController.text)
+            : null,
+        profilePicturePath: 'profilePicture/${user.uid}',
       );
 
       await _firestoreService.createUserProfile(userProfile);
@@ -127,7 +154,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _weightController.dispose();
     _heightController.dispose();
     _fullNameController.dispose();
-    _profilePictureUrlController.dispose();
     _dateOfBirthController.dispose();
     _bmiController.dispose();
     super.dispose();
@@ -135,6 +161,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    User? user = _auth.currentUser;
     return Scaffold(
       appBar: AppBar(
         title: Text('Complete Profile'),
@@ -146,18 +173,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
           },
         ),
       ),
-      body: Padding(
+      body: _isLoading
+          ? Center(
+        child: SpinKitFadingCircle(
+          color: Colors.white,
+          size: 50.0,
+        ),
+      )
+          : Padding(
         padding: EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             children: [
+              if (user != null)
+                ProfilePicture(userId: user.uid), // Pass userId to ProfilePicture widget
               TextField(
                 controller: _fullNameController,
                 decoration: InputDecoration(labelText: 'Full Name'),
-              ),
-              TextField(
-                controller: _profilePictureUrlController,
-                decoration: InputDecoration(labelText: 'Profile Picture URL'),
               ),
               Column(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -176,12 +208,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   if (_calculatedAge != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(40.0, 0, 0, 0),
-                      child: Text('Age: $_calculatedAge years', style: TextStyle(fontSize: 16)),
+                      child: Text('Age: $_calculatedAge years',
+                          style: TextStyle(fontSize: 16)),
                     ),
                   SizedBox(height: 20),
                 ],
               ),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

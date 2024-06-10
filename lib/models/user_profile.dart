@@ -4,23 +4,25 @@ class UserProfile {
   String userId;
   String? fullName;
   String email;
-  String? profilePictureUrl;
+  String? profilePicturePath;
   DateTime? dateOfBirth;
   String? gender;
   double? weight;
   double? height;
   double? bmi;
+  int? age;
 
   UserProfile({
     required this.userId,
     this.fullName,
     required this.email,
-    this.profilePictureUrl,
+    this.profilePicturePath,
     this.dateOfBirth,
     this.gender,
     this.weight,
     this.height,
     this.bmi,
+    this.age
   });
 
   Map<String, dynamic> toMap() {
@@ -28,12 +30,13 @@ class UserProfile {
       'userId': userId,
       'fullName': fullName,
       'email': email,
-      'profilePictureUrl': profilePictureUrl,
+      'profilePicturePath': profilePicturePath,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
       'gender': gender,
       'weight': weight,
       'height': height,
       'bmi': bmi,
+      'age' : age,
     };
   }
 
@@ -42,18 +45,14 @@ class UserProfile {
       userId: map['userId'],
       fullName: map['fullName'],
       email: map['email'],
-      profilePictureUrl: map['profilePictureUrl'],
+      profilePicturePath: map['profilePicturePath'],
       dateOfBirth: map['dateOfBirth'] != null ? DateTime.parse(map['dateOfBirth']) : null,
       gender: map['gender'],
       weight: map['weight'],
       height: map['height'],
       bmi: map['bmi'],
+      age: map['age'],
     );
   }
 
-  int? get age {
-    if (dateOfBirth == null) return null;
-    DateDuration duration = AgeCalculator.age(dateOfBirth!);
-    return duration.years;
-  }
 }
