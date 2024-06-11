@@ -8,6 +8,8 @@ import 'package:fp_recipemanager/pages/recipe_detail_page.dart';
 import 'package:fp_recipemanager/services/storage_service.dart'; // Import the storage service
 import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:firebase_auth/firebase_auth.dart'; // Import for current user
+import '../models/user_profile.dart';
+import '../services/user_profile_service.dart';
 
 class RecipePage extends StatefulWidget {
   @override
@@ -17,6 +19,7 @@ class RecipePage extends StatefulWidget {
 class _RecipePageState extends State<RecipePage> {
   final RecipeService _recipeService = RecipeService();
   final StorageService _storageService = StorageService();
+  final UserProfileService _userProfileService = UserProfileService();
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +41,14 @@ class _RecipePageState extends State<RecipePage> {
 
           final recipes = snapshot.data ?? [];
 
-          return ListView.builder(
+          return GridView.builder(
+            padding: const EdgeInsets.all(8.0),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+              childAspectRatio: 3 / 4, // Adjust the aspect ratio as needed
+            ),
             itemCount: recipes.length,
             itemBuilder: (context, index) {
               final recipe = recipes[index];
@@ -58,6 +68,7 @@ class _RecipePageState extends State<RecipePage> {
                       height: double.infinity,
                     );
                   }
+
                   return InkWell(
                     onTap: () {
                       Navigator.push(
@@ -67,51 +78,95 @@ class _RecipePageState extends State<RecipePage> {
                         ),
                       );
                     },
-                    child: ListTile(
-                      leading: Padding(
-                        padding: const EdgeInsets.only(left: 16.0), // Add padding to the left side
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: Container(
-                              color: Colors.grey, // Ensure a background color is provided for placeholder
-                              child: imageWidget,
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(8.0)),
+                              child: Container(
+                                color: Colors.grey, // Ensure a background color is provided for placeholder
+                                child: imageWidget,
+                              ),
                             ),
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  recipe.title,
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(height: 4),
+
+                                FutureBuilder<UserProfile?>(
+                                  future: _userProfileService.getUserProfile(recipe.createdBy),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return Center(child: CircularProgressIndicator());
+                                    } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                                      return Text(
+                                        'Creator: Unknown',
+                                        style: TextStyle(fontSize: 16, color: Colors.red),
+                                      );
+                                    } else {
+                                      UserProfile creatorProfile = snapshot.data!;
+                                      return Row(
+                                        children: [
+                                          if (creatorProfile.profilePicturePath != null)
+                                            FutureBuilder<Uint8List?>(
+                                              future: _storageService.getFile(creatorProfile.profilePicturePath!),
+                                              builder: (context, profilePictureSnapshot) {
+                                                if (profilePictureSnapshot.connectionState == ConnectionState.waiting) {
+                                                  return CircularProgressIndicator();
+                                                } else if (profilePictureSnapshot.hasError || !profilePictureSnapshot.hasData || profilePictureSnapshot.data == null) {
+                                                  return Icon(Icons.person, size: 20, color: Colors.grey);
+                                                } else {
+                                                  return ClipRRect(
+                                                    borderRadius: BorderRadius.circular(25.0), // Half of the size to make it a circle
+                                                    child: Image.memory(
+                                                      profilePictureSnapshot.data!,
+                                                      width: 20,
+                                                      height: 20,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                          SizedBox(width: 8),
+                                          Flexible(
+                                            child: Text(
+                                              creatorProfile.fullName ?? creatorProfile.email,
+                                              style: TextStyle(fontSize: 12, color: Colors.grey), // Smaller font size
+                                              softWrap: true,
+                                              overflow: TextOverflow.visible, // Allow wrapping to next line if text is too long
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                  },
+                                ),
+
+
+                                SizedBox(height: 4),
+
+                                Text(
+                                  DateFormat('yyyy-MM-dd – kk:mm').format(recipe.createdTime),
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      title: Text(recipe.title),
-                      subtitle: Text(DateFormat('yyyy-MM-dd – kk:mm').format(recipe.createdTime)),
-                      trailing: currentUser != null && recipe.createdBy == currentUser.uid
-                          ? Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit),
-                              onPressed: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => EditRecipePage(recipe: recipe),
-                                  ),
-                                );
-                                setState(() {});
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () {
-                                _recipeService.deleteRecipe(recipe.recipeId);
-                              },
-                            ),
-                          ],
-                        ),
-                      )
-                          : null,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10.0),
                     ),
                   );
                 },
