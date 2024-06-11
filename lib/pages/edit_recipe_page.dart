@@ -1,22 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:fp_recipemanager/services/recipe_service.dart';
-import 'package:fp_recipemanager/model/recipe.dart';
+import 'package:fp_recipemanager/models/recipe.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fp_recipemanager/components/recipe_image.dart';
 
-class EditRecipePage extends StatelessWidget {
+class EditRecipePage extends StatefulWidget {
   final Recipe recipe;
-  final TextEditingController imageUrlController;
-  final TextEditingController titleController;
-  final TextEditingController descriptionController;
-  final TextEditingController categoryController;
+
+  EditRecipePage({Key? key, required this.recipe}) : super(key: key);
+
+  @override
+  _EditRecipePageState createState() => _EditRecipePageState();
+}
+
+class _EditRecipePageState extends State<EditRecipePage> {
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController categoryController = TextEditingController();
 
   final RecipeService _recipeService = RecipeService();
+  final _formKey = GlobalKey<FormState>();
 
-  EditRecipePage({Key? key, required this.recipe})
-      : imageUrlController = TextEditingController(text: recipe.imageUrl),
-        titleController = TextEditingController(text: recipe.title),
-        descriptionController = TextEditingController(text: recipe.description),
-        categoryController = TextEditingController(text: recipe.categoryId),
-        super(key: key);
+  String? _imagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    titleController.text = widget.recipe.title;
+    descriptionController.text = widget.recipe.description;
+    categoryController.text = widget.recipe.categoryId;
+    _imagePath = widget.recipe.imagePath;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,43 +41,100 @@ class EditRecipePage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: imageUrlController,
-                decoration: InputDecoration(labelText: 'Image Url'),
-              ),
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(labelText: 'Title'),
-              ),
-              TextField(
-                controller: descriptionController,
-                maxLines: 10,
-                decoration: InputDecoration(labelText: 'Description'),
-              ),
-              TextField(
-                controller: categoryController,
-                decoration: InputDecoration(labelText: 'Category Id'),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  final updatedRecipe = Recipe(
-                    id: recipe.id,
-                    imageUrl: imageUrlController.text,
-                    title: titleController.text,
-                    description: descriptionController.text,
-                    categoryId: categoryController.text,
-                    // createdTime: recipe.createdTime,
-                  );
-                  _recipeService.updateRecipe(updatedRecipe);
-                  Navigator.pop(context);
-                },
-                child: Text('Save Changes'),
-              ),
-            ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RecipeImage(
+                  recipeId: widget.recipe.recipeId,
+                  onImagePathChanged: (path) {
+                    setState(() {
+                      _imagePath = path;
+                    });
+                  },
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: 'Title',
+                    labelStyle: TextStyle(fontWeight: FontWeight.w300),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Title is required';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: descriptionController,
+                  maxLines: 10,
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    labelStyle: TextStyle(fontWeight: FontWeight.w300),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Description is required';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: categoryController,
+                  decoration: InputDecoration(
+                    labelText: 'Category Id',
+                    labelStyle: TextStyle(fontWeight: FontWeight.w300),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Category Id is required';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState?.validate() ?? false) {
+                      User? user = FirebaseAuth.instance.currentUser;
+                      if (user != null && _imagePath != null) {
+                        final updatedRecipe = Recipe(
+                          recipeId: widget.recipe.recipeId,
+                          imagePath: _imagePath!,
+                          title: titleController.text,
+                          description: descriptionController.text,
+                          categoryId: categoryController.text,
+                          createdBy: widget.recipe.createdBy, // Retain the original creator
+                          createdTime: widget.recipe.createdTime, // Retain the original creation time
+                        );
+                        await _recipeService.updateRecipe(updatedRecipe);
+
+                        // Show success snackbar
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Recipe updated successfully'),
+                          ),
+                        );
+
+                        Navigator.pop(context);
+                      } else {
+                        // Handle the case when the user is not signed in or imagePath is not set
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('You need to be signed in and have an image to update the recipe'),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: Text('Save Changes'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

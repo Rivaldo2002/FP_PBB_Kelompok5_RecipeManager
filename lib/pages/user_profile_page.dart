@@ -27,6 +27,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   int? _calculatedAge;
   String? _profilePicturePath;
   bool _isLoading = true;
+  bool _isProfileExisting = false;
 
   @override
   void initState() {
@@ -39,8 +40,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _loadUserProfile() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      UserProfile? userProfile =
-      await _firestoreService.getUserProfile(user.uid);
+      UserProfile? userProfile = await _firestoreService.getUserProfile(user.uid);
       if (userProfile != null) {
         setState(() {
           _fullNameController.text = userProfile.fullName ?? '';
@@ -48,24 +48,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!)
               : '';
           _selectedGender = userProfile.gender;
-          _weightController.text =
-          userProfile.weight != null ? userProfile.weight.toString() : '';
-          _heightController.text =
-          userProfile.height != null ? userProfile.height.toString() : '';
-          _bmiController.text =
-          userProfile.bmi != null ? userProfile.bmi.toString() : '';
+          _weightController.text = userProfile.weight != null ? userProfile.weight.toString() : '';
+          _heightController.text = userProfile.height != null ? userProfile.height.toString() : '';
+          _bmiController.text = userProfile.bmi != null ? userProfile.bmi.toString() : '';
           _calculatedAge = userProfile.age;
           _profilePicturePath = 'profilePicture/${userProfile.userId}';
-        });
-
-        // Introduce a delay before hiding the loading spinner
-        await Future.delayed(Duration(milliseconds: 200));
-
-        setState(() {
-          _isLoading = false; // Data has been loaded
+          _isProfileExisting = true;
         });
       }
     }
+    // Hide loading spinner after user profile is loaded or determined to be non-existing
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   void _calculateBMI() {
@@ -92,8 +87,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
     if (pickedDate != null) {
       setState(() {
-        _dateOfBirthController.text =
-            DateFormat('yyyy-MM-dd').format(pickedDate);
+        _dateOfBirthController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
         _calculatedAge = AgeCalculator.age(pickedDate).years;
       });
     }
@@ -104,27 +98,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (user != null) {
       UserProfile userProfile = UserProfile(
         userId: user.uid,
-        fullName: _fullNameController.text.isNotEmpty
-            ? _fullNameController.text
-            : null,
+        fullName: _fullNameController.text.isNotEmpty ? _fullNameController.text : null,
         email: user.email!,
         dateOfBirth: _dateOfBirthController.text.isNotEmpty
             ? DateTime.parse(_dateOfBirthController.text)
             : null,
         gender: _selectedGender,
-        weight: _weightController.text.isNotEmpty
-            ? double.parse(_weightController.text)
-            : null,
-        height: _heightController.text.isNotEmpty
-            ? double.parse(_heightController.text)
-            : null,
-        bmi: _bmiController.text.isNotEmpty
-            ? double.parse(_bmiController.text)
-            : null,
+        weight: _weightController.text.isNotEmpty ? double.parse(_weightController.text) : null,
+        height: _heightController.text.isNotEmpty ? double.parse(_heightController.text) : null,
+        bmi: _bmiController.text.isNotEmpty ? double.parse(_bmiController.text) : null,
         profilePicturePath: 'profilePicture/${user.uid}',
       );
 
-      await _firestoreService.createUserProfile(userProfile);
+      if (_isProfileExisting) {
+        await _firestoreService.updateUserProfile(userProfile);
+      } else {
+        await _firestoreService.createUserProfile(userProfile);
+      }
 
       // Show success dialog
       showDialog(
@@ -185,8 +175,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              if (user != null)
-                ProfilePicture(userId: user.uid), // Pass userId to ProfilePicture widget
+              if (user != null) ProfilePicture(userId: user.uid),
               TextField(
                 controller: _fullNameController,
                 decoration: InputDecoration(labelText: 'Full Name'),
@@ -208,8 +197,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   if (_calculatedAge != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(40.0, 0, 0, 0),
-                      child: Text('Age: $_calculatedAge years',
-                          style: TextStyle(fontSize: 16)),
+                      child: Text('Age: $_calculatedAge years', style: TextStyle(fontSize: 16)),
                     ),
                   SizedBox(height: 20),
                 ],

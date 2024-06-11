@@ -3,7 +3,7 @@ import 'package:fp_recipemanager/themes/dark_mode.dart';
 import 'package:fp_recipemanager/themes/light_mode.dart';
 
 class ThemeProvider with ChangeNotifier {
-  ThemeData _themeData = darkMode;
+  ThemeData _themeData = lightMode;
 
   ThemeData get themeData => _themeData;
 

@@ -2,6 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fp_recipemanager/components/my_drawer_tile.dart';
+import 'package:fp_recipemanager/pages/add_recipe_page.dart';
+import 'package:fp_recipemanager/pages/my_recipe_page.dart';
+import 'package:fp_recipemanager/pages/recipe_page.dart';
 import 'package:fp_recipemanager/pages/user_profile_page.dart';
 
 class MyDrawer extends StatelessWidget {
@@ -42,6 +45,16 @@ class MyDrawer extends StatelessWidget {
               text: "P R O F I L E", icon: Icons.person, onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfilePage(),),);
+          }),
+          MyDrawerTile(
+              text: "View Recipes", icon: Icons.fastfood, onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => RecipePage(),),);
+          }),
+          MyDrawerTile(
+              text: "View My Recipes", icon: Icons.fastfood, onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => MyRecipePage(),),);
           }),
           const Spacer(),
           // Logout List Tile

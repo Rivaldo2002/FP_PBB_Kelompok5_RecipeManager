@@ -9,22 +9,21 @@ import 'package:fp_recipemanager/services/storage_service.dart'; // Import the s
 import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:firebase_auth/firebase_auth.dart'; // Import for current user
 
-class RecipePage extends StatefulWidget {
+class MyRecipePage extends StatefulWidget {
   @override
-  _RecipePageState createState() => _RecipePageState();
+  _MyRecipePageState createState() => _MyRecipePageState();
 }
 
-class _RecipePageState extends State<RecipePage> {
+class _MyRecipePageState extends State<MyRecipePage> {
   final RecipeService _recipeService = RecipeService();
   final StorageService _storageService = StorageService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
-    User? currentUser = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Recipe Manager'),
+        title: Text('My Recipes'),
       ),
       body: StreamBuilder<List<Recipe>>(
         stream: _recipeService.getRecipes(),
@@ -36,7 +35,16 @@ class _RecipePageState extends State<RecipePage> {
             return Center(child: CircularProgressIndicator());
           }
 
-          final recipes = snapshot.data ?? [];
+          User? currentUser = _auth.currentUser;
+          if (currentUser == null) {
+            return Center(child: Text('No user logged in.'));
+          }
+
+          final recipes = snapshot.data?.where((recipe) => recipe.createdBy == currentUser.uid).toList() ?? [];
+
+          if (recipes.isEmpty) {
+            return Center(child: Text('You have not created any recipes yet.'));
+          }
 
           return ListView.builder(
             itemCount: recipes.length,
@@ -83,8 +91,7 @@ class _RecipePageState extends State<RecipePage> {
                       ),
                       title: Text(recipe.title),
                       subtitle: Text(DateFormat('yyyy-MM-dd – kk:mm').format(recipe.createdTime)),
-                      trailing: currentUser != null && recipe.createdBy == currentUser.uid
-                          ? Padding(
+                      trailing: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -109,8 +116,7 @@ class _RecipePageState extends State<RecipePage> {
                             ),
                           ],
                         ),
-                      )
-                          : null,
+                      ),
                       contentPadding: EdgeInsets.symmetric(vertical: 10.0),
                     ),
                   );

@@ -1,5 +1,3 @@
-import 'package:age_calculator/age_calculator.dart';
-
 class UserProfile {
   String userId;
   String? fullName;
