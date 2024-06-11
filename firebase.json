@@ -1,1 +1,40 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"fp-recipe-manager","appId":"1:391843789210:android:d0e0b52bad8df916b96223","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"fp-recipe-manager","configurations":{"android":"1:391843789210:android:d0e0b52bad8df916b96223","ios":"1:391843789210:ios:e2a98f173fa1cdcbb96223"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fp-recipe-manager",
+          "appId": "1:391843789210:android:d0e0b52bad8df916b96223",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fp-recipe-manager",
+          "configurations": {
+            "android": "1:391843789210:android:d0e0b52bad8df916b96223",
+            "ios": "1:391843789210:ios:e2a98f173fa1cdcbb96223"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/profilePicture/**",
+        "destination": "https://firebasestorage.googleapis.com/v0/b/fp-recipe-manager.appspot.com/o/profilePicture%2F$1?alt=media"
+      },
+      {
+        "source": "/recipeImage/**",
+        "destination": "https://firebasestorage.googleapis.com/v0/b/fp-recipe-manager.appspot.com/o/recipeImage%2F$1?alt=media"
+      }
+    ]
+  }
+}
