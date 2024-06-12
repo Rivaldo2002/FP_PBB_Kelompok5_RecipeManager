@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:typed_data';
-import 'package:firebase_auth/firebase_auth.dart'; // Import for current user
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/recipe_service.dart';
 import '../models/recipe.dart';
 import '../pages/edit_recipe_page.dart';
@@ -43,28 +43,62 @@ class RecipeDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FutureBuilder<Uint8List?>(
-              future: _storageService.getFile(recipe.imagePath),
+            FutureBuilder<String?>(
+              future: _storageService.getDownloadURL(recipe.imagePath),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: Container(
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.width,
+                      color: Colors.grey,
+                      child: Center(
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 100,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
                 } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(16.0),
                     child: Container(
                       width: double.infinity,
-                      height: MediaQuery.of(context).size.width, // Make it square
+                      height: MediaQuery.of(context).size.width,
                       color: Colors.grey,
-                      child: Icon(Icons.fastfood, size: 100, color: Colors.white),
+                      child: Center(
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 100,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   );
                 } else {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(16.0),
-                    child: Image.memory(
-                      snapshot.data!,
+                    child: CachedNetworkImage(
+                      imageUrl: snapshot.data!,
+                      placeholder: (context, url) => Container(
+                        width: double.infinity,
+                        height: MediaQuery.of(context).size.width,
+                        color: Colors.grey,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: double.infinity,
+                        height: MediaQuery.of(context).size.width,
+                        color: Colors.grey,
+                        child: Center(
+                          child: Icon(Icons.error),
+                        ),
+                      ),
                       width: double.infinity,
-                      height: MediaQuery.of(context).size.width, // Make it square
+                      height: MediaQuery.of(context).size.width,
                       fit: BoxFit.cover,
                     ),
                   );
@@ -85,29 +119,73 @@ class RecipeDetailPage extends StatelessWidget {
               future: _userProfileService.getUserProfile(recipe.createdBy),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return Row(
+                    children: [
+                      Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.grey,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.person,
+                            size: 25,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Loading...',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    ],
+                  );
                 } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                  return Text(
-                    'Creator: Unknown',
-                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  return Row(
+                    children: [
+                      Icon(Icons.person, size: 25, color: Colors.grey),
+                      SizedBox(width: 8),
+                      Text(
+                        'Creator: Unknown',
+                        style: TextStyle(fontSize: 16, color: Colors.red),
+                      ),
+                    ],
                   );
                 } else {
                   UserProfile creatorProfile = snapshot.data!;
                   return Row(
                     children: [
                       if (creatorProfile.profilePicturePath != null)
-                        FutureBuilder<Uint8List?>(
-                          future: _storageService.getFile(creatorProfile.profilePicturePath!),
+                        FutureBuilder<String?>(
+                          future: _storageService.getDownloadURL(creatorProfile.profilePicturePath!),
                           builder: (context, profilePictureSnapshot) {
                             if (profilePictureSnapshot.connectionState == ConnectionState.waiting) {
-                              return CircularProgressIndicator();
+                              return Container(
+                                height: 50,
+                                width: 50,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              );
                             } else if (profilePictureSnapshot.hasError || !profilePictureSnapshot.hasData || profilePictureSnapshot.data == null) {
                               return Icon(Icons.person, size: 50, color: Colors.grey);
                             } else {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(25.0), // Half of the size to make it a circle
-                                child: Image.memory(
-                                  profilePictureSnapshot.data!,
+                              return ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: profilePictureSnapshot.data!,
+                                  placeholder: (context, url) => CircularProgressIndicator(),
+                                  errorWidget: (context, url, error) => Icon(Icons.error),
                                   width: 50,
                                   height: 50,
                                   fit: BoxFit.cover,

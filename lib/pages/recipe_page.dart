@@ -1,13 +1,13 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fp_recipemanager/services/recipe_service.dart';
 import 'package:fp_recipemanager/models/recipe.dart';
 import 'package:fp_recipemanager/pages/add_recipe_page.dart';
 import 'package:fp_recipemanager/pages/edit_recipe_page.dart';
 import 'package:fp_recipemanager/pages/recipe_detail_page.dart';
-import 'package:fp_recipemanager/services/storage_service.dart'; // Import the storage service
-import 'package:intl/intl.dart'; // Import for date formatting
-import 'package:firebase_auth/firebase_auth.dart'; // Import for current user
+import 'package:fp_recipemanager/services/storage_service.dart';
+import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user_profile.dart';
 import '../services/user_profile_service.dart';
 
@@ -47,22 +47,52 @@ class _RecipePageState extends State<RecipePage> {
               crossAxisCount: 2,
               crossAxisSpacing: 8.0,
               mainAxisSpacing: 8.0,
-              childAspectRatio: 3 / 4, // Adjust the aspect ratio as needed
+              childAspectRatio: 3 / 4,
             ),
             itemCount: recipes.length,
             itemBuilder: (context, index) {
               final recipe = recipes[index];
-              return FutureBuilder<Uint8List?>(
-                future: _storageService.getFile(recipe.imagePath),
+              return FutureBuilder<String?>(
+                future: _storageService.getDownloadURL(recipe.imagePath),
                 builder: (context, imageSnapshot) {
                   Widget imageWidget;
                   if (imageSnapshot.connectionState == ConnectionState.waiting) {
-                    imageWidget = CircularProgressIndicator();
+                    imageWidget = Container(
+                      color: Colors.grey,
+                      child: Center(
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 80,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
                   } else if (imageSnapshot.hasError || !imageSnapshot.hasData || imageSnapshot.data == null) {
-                    imageWidget = Icon(Icons.fastfood, size: 80, color: Colors.grey);
+                    imageWidget = Container(
+                      color: Colors.grey,
+                      child: Center(
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 80,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
                   } else {
-                    imageWidget = Image.memory(
-                      imageSnapshot.data!,
+                    imageWidget = CachedNetworkImage(
+                      imageUrl: imageSnapshot.data!,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey,
+                        child: Center(
+                          child: Icon(Icons.error),
+                        ),
+                      ),
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -89,7 +119,7 @@ class _RecipePageState extends State<RecipePage> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.vertical(top: Radius.circular(8.0)),
                               child: Container(
-                                color: Colors.grey, // Ensure a background color is provided for placeholder
+                                color: Colors.grey,
                                 child: imageWidget,
                               ),
                             ),
@@ -104,34 +134,67 @@ class _RecipePageState extends State<RecipePage> {
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                                 SizedBox(height: 4),
-
                                 FutureBuilder<UserProfile?>(
                                   future: _userProfileService.getUserProfile(recipe.createdBy),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return Center(child: CircularProgressIndicator());
+                                      return Row(
+                                        children: [
+                                          Container(
+                                            height: 20,
+                                            width: 20,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Center(child: Icon(Icons.person, size: 20, color: Colors.white)),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Flexible(
+                                            child: Text(
+                                              'Loading...',
+                                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                                            ),
+                                          ),
+                                        ],
+                                      );
                                     } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                                      return Text(
-                                        'Creator: Unknown',
-                                        style: TextStyle(fontSize: 16, color: Colors.red),
+                                      return Row(
+                                        children: [
+                                          Icon(Icons.person, size: 20, color: Colors.grey),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Creator: Unknown',
+                                            style: TextStyle(fontSize: 12, color: Colors.red),
+                                          ),
+                                        ],
                                       );
                                     } else {
                                       UserProfile creatorProfile = snapshot.data!;
                                       return Row(
                                         children: [
                                           if (creatorProfile.profilePicturePath != null)
-                                            FutureBuilder<Uint8List?>(
-                                              future: _storageService.getFile(creatorProfile.profilePicturePath!),
+                                            FutureBuilder<String?>(
+                                              future: _storageService.getDownloadURL(creatorProfile.profilePicturePath!),
                                               builder: (context, profilePictureSnapshot) {
                                                 if (profilePictureSnapshot.connectionState == ConnectionState.waiting) {
-                                                  return CircularProgressIndicator();
+                                                  return Container(
+                                                    height: 20,
+                                                    width: 20,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Center(child: Icon(Icons.person, size: 20, color: Colors.white)),
+                                                  );
                                                 } else if (profilePictureSnapshot.hasError || !profilePictureSnapshot.hasData || profilePictureSnapshot.data == null) {
                                                   return Icon(Icons.person, size: 20, color: Colors.grey);
                                                 } else {
-                                                  return ClipRRect(
-                                                    borderRadius: BorderRadius.circular(25.0), // Half of the size to make it a circle
-                                                    child: Image.memory(
-                                                      profilePictureSnapshot.data!,
+                                                  return ClipOval(
+                                                    child: CachedNetworkImage(
+                                                      imageUrl: profilePictureSnapshot.data!,
+                                                      placeholder: (context, url) => CircularProgressIndicator(),
+                                                      errorWidget: (context, url, error) => Icon(Icons.error),
                                                       width: 20,
                                                       height: 20,
                                                       fit: BoxFit.cover,
@@ -144,9 +207,9 @@ class _RecipePageState extends State<RecipePage> {
                                           Flexible(
                                             child: Text(
                                               creatorProfile.fullName ?? creatorProfile.email,
-                                              style: TextStyle(fontSize: 12, color: Colors.grey), // Smaller font size
+                                              style: TextStyle(fontSize: 12, color: Colors.grey),
                                               softWrap: true,
-                                              overflow: TextOverflow.visible, // Allow wrapping to next line if text is too long
+                                              overflow: TextOverflow.visible,
                                             ),
                                           ),
                                         ],
@@ -154,10 +217,7 @@ class _RecipePageState extends State<RecipePage> {
                                     }
                                   },
                                 ),
-
-
                                 SizedBox(height: 4),
-
                                 Text(
                                   DateFormat('yyyy-MM-dd – kk:mm').format(recipe.createdTime),
                                   style: TextStyle(fontSize: 12, color: Colors.grey),

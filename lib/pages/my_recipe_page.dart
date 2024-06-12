@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fp_recipemanager/services/recipe_service.dart';
@@ -5,9 +6,9 @@ import 'package:fp_recipemanager/models/recipe.dart';
 import 'package:fp_recipemanager/pages/add_recipe_page.dart';
 import 'package:fp_recipemanager/pages/edit_recipe_page.dart';
 import 'package:fp_recipemanager/pages/recipe_detail_page.dart';
-import 'package:fp_recipemanager/services/storage_service.dart'; // Import the storage service
-import 'package:intl/intl.dart'; // Import for date formatting
-import 'package:firebase_auth/firebase_auth.dart'; // Import for current user
+import 'package:fp_recipemanager/services/storage_service.dart';
+import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MyRecipePage extends StatefulWidget {
   @override
@@ -50,17 +51,47 @@ class _MyRecipePageState extends State<MyRecipePage> {
             itemCount: recipes.length,
             itemBuilder: (context, index) {
               final recipe = recipes[index];
-              return FutureBuilder<Uint8List?>(
-                future: _storageService.getFile(recipe.imagePath),
+              return FutureBuilder<String?>(
+                future: _storageService.getDownloadURL(recipe.imagePath),
                 builder: (context, imageSnapshot) {
                   Widget imageWidget;
                   if (imageSnapshot.connectionState == ConnectionState.waiting) {
-                    imageWidget = CircularProgressIndicator();
+                    imageWidget = Container(
+                      color: Colors.grey,
+                      child: Center(
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
                   } else if (imageSnapshot.hasError || !imageSnapshot.hasData || imageSnapshot.data == null) {
-                    imageWidget = Icon(Icons.fastfood, size: 80, color: Colors.grey);
+                    imageWidget = Container(
+                      color: Colors.grey,
+                      child: Center(
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
                   } else {
-                    imageWidget = Image.memory(
-                      imageSnapshot.data!,
+                    imageWidget = CachedNetworkImage(
+                      imageUrl: imageSnapshot.data!,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey,
+                        child: Center(
+                          child: Icon(Icons.error),
+                        ),
+                      ),
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -77,13 +108,13 @@ class _MyRecipePageState extends State<MyRecipePage> {
                     },
                     child: ListTile(
                       leading: Padding(
-                        padding: const EdgeInsets.only(left: 16.0), // Add padding to the left side
+                        padding: const EdgeInsets.only(left: 16.0),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8.0),
                           child: AspectRatio(
                             aspectRatio: 1,
                             child: Container(
-                              color: Colors.grey, // Ensure a background color is provided for placeholder
+                              color: Colors.grey,
                               child: imageWidget,
                             ),
                           ),
