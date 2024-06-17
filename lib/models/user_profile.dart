@@ -9,6 +9,7 @@ class UserProfile {
   double? height;
   double? bmi;
   int? age;
+  bool isAdmin; // New field for admin role
 
   UserProfile({
     required this.userId,
@@ -20,7 +21,8 @@ class UserProfile {
     this.weight,
     this.height,
     this.bmi,
-    this.age
+    this.age,
+    required this.isAdmin, // Initialize the isAdmin field
   });
 
   Map<String, dynamic> toMap() {
@@ -34,7 +36,8 @@ class UserProfile {
       'weight': weight,
       'height': height,
       'bmi': bmi,
-      'age' : age,
+      'age': age,
+      'isAdmin': isAdmin, // Include the isAdmin field in the map
     };
   }
 
@@ -50,7 +53,7 @@ class UserProfile {
       height: map['height'],
       bmi: map['bmi'],
       age: map['age'],
+      isAdmin: map['isAdmin'], // Parse the isAdmin field from the map
     );
   }
-
 }

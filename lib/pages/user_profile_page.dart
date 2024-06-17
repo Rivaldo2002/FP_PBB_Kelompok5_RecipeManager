@@ -28,6 +28,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   String? _profilePicturePath;
   bool _isLoading = true;
   bool _isProfileExisting = false;
+  bool? _isAdmin; // New state variable to hold admin status
 
   @override
   void initState() {
@@ -40,7 +41,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _loadUserProfile() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      UserProfile? userProfile = await _firestoreService.getUserProfile(user.uid);
+      UserProfile? userProfile =
+          await _firestoreService.getUserProfile(user.uid);
       if (userProfile != null) {
         setState(() {
           _fullNameController.text = userProfile.fullName ?? '';
@@ -48,16 +50,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!)
               : '';
           _selectedGender = userProfile.gender;
-          _weightController.text = userProfile.weight != null ? userProfile.weight.toString() : '';
-          _heightController.text = userProfile.height != null ? userProfile.height.toString() : '';
-          _bmiController.text = userProfile.bmi != null ? userProfile.bmi.toString() : '';
+          _weightController.text =
+              userProfile.weight != null ? userProfile.weight.toString() : '';
+          _heightController.text =
+              userProfile.height != null ? userProfile.height.toString() : '';
+          _bmiController.text =
+              userProfile.bmi != null ? userProfile.bmi.toString() : '';
           _calculatedAge = userProfile.age;
           _profilePicturePath = 'profilePicture/${userProfile.userId}';
           _isProfileExisting = true;
+          _isAdmin = userProfile.isAdmin; // Set admin status
         });
       }
     }
-    // Hide loading spinner after user profile is loaded or determined to be non-existing
     setState(() {
       _isLoading = false;
     });
@@ -87,7 +92,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
     if (pickedDate != null) {
       setState(() {
-        _dateOfBirthController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
+        _dateOfBirthController.text =
+            DateFormat('yyyy-MM-dd').format(pickedDate);
         _calculatedAge = AgeCalculator.age(pickedDate).years;
       });
     }
@@ -98,16 +104,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (user != null) {
       UserProfile userProfile = UserProfile(
         userId: user.uid,
-        fullName: _fullNameController.text.isNotEmpty ? _fullNameController.text : null,
+        fullName: _fullNameController.text.isNotEmpty
+            ? _fullNameController.text
+            : null,
         email: user.email!,
         dateOfBirth: _dateOfBirthController.text.isNotEmpty
             ? DateTime.parse(_dateOfBirthController.text)
             : null,
         gender: _selectedGender,
-        weight: _weightController.text.isNotEmpty ? double.parse(_weightController.text) : null,
-        height: _heightController.text.isNotEmpty ? double.parse(_heightController.text) : null,
-        bmi: _bmiController.text.isNotEmpty ? double.parse(_bmiController.text) : null,
+        weight: _weightController.text.isNotEmpty
+            ? double.parse(_weightController.text)
+            : null,
+        height: _heightController.text.isNotEmpty
+            ? double.parse(_heightController.text)
+            : null,
+        bmi: _bmiController.text.isNotEmpty
+            ? double.parse(_bmiController.text)
+            : null,
         profilePicturePath: 'profilePicture/${user.uid}',
+        isAdmin: _isAdmin ?? false, // Ensure the admin status is retained
       );
 
       if (_isProfileExisting) {
@@ -116,7 +131,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         await _firestoreService.createUserProfile(userProfile);
       }
 
-      // Show success dialog
       showDialog(
         context: context,
         builder: (context) {
@@ -165,97 +179,104 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
       body: _isLoading
           ? Center(
-        child: SpinKitFadingCircle(
-          color: Colors.white,
-          size: 50.0,
-        ),
-      )
+              child: SpinKitFadingCircle(
+                color: Colors.white,
+                size: 50.0,
+              ),
+            )
           : Padding(
-        padding: EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              if (user != null) ProfilePicture(userId: user.uid),
-              TextField(
-                controller: _fullNameController,
-                decoration: InputDecoration(labelText: 'Full Name'),
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _dateOfBirthController,
-                    decoration: InputDecoration(
-                      labelText: 'Date of Birth (YYYY-MM-DD)',
-                      icon: Icon(Icons.calendar_today),
+              padding: EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    if (user != null) ProfilePicture(userId: user.uid),
+                    SizedBox(height: 10),
+                    Text(
+                      _isAdmin! ? 'A D M I N' : 'U S E R',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                  ),
-                  SizedBox(height: 20),
-                  if (_calculatedAge != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(40.0, 0, 0, 0),
-                      child: Text('Age: $_calculatedAge years', style: TextStyle(fontSize: 16)),
+                    TextField(
+                      controller: _fullNameController,
+                      decoration: InputDecoration(labelText: 'Full Name'),
                     ),
-                  SizedBox(height: 20),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Gender', style: TextStyle(fontSize: 16)),
-                  ListTile(
-                    title: const Text('Male'),
-                    leading: Radio<String>(
-                      value: 'Male',
-                      groupValue: _selectedGender,
-                      onChanged: (String? value) {
-                        setState(() {
-                          _selectedGender = value;
-                        });
-                      },
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: _dateOfBirthController,
+                          decoration: InputDecoration(
+                            labelText: 'Date of Birth (YYYY-MM-DD)',
+                            icon: Icon(Icons.calendar_today),
+                          ),
+                          readOnly: true,
+                          onTap: () => _selectDate(context),
+                        ),
+                        SizedBox(height: 20),
+                        if (_calculatedAge != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(40.0, 0, 0, 0),
+                            child: Text('Age: $_calculatedAge years',
+                                style: TextStyle(fontSize: 16)),
+                          ),
+                        SizedBox(height: 20),
+                      ],
                     ),
-                  ),
-                  ListTile(
-                    title: const Text('Female'),
-                    leading: Radio<String>(
-                      value: 'Female',
-                      groupValue: _selectedGender,
-                      onChanged: (String? value) {
-                        setState(() {
-                          _selectedGender = value;
-                        });
-                      },
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gender', style: TextStyle(fontSize: 16)),
+                        ListTile(
+                          title: const Text('Male'),
+                          leading: Radio<String>(
+                            value: 'Male',
+                            groupValue: _selectedGender,
+                            onChanged: (String? value) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            },
+                          ),
+                        ),
+                        ListTile(
+                          title: const Text('Female'),
+                          leading: Radio<String>(
+                            value: 'Female',
+                            groupValue: _selectedGender,
+                            onChanged: (String? value) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    TextField(
+                      controller: _weightController,
+                      decoration: InputDecoration(labelText: 'Weight (kg)'),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextField(
+                      controller: _heightController,
+                      decoration: InputDecoration(labelText: 'Height (m)'),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextField(
+                      controller: _bmiController,
+                      decoration: InputDecoration(labelText: 'BMI'),
+                      readOnly: true,
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _submitProfile,
+                      child: Text('Submit'),
+                    ),
+                  ],
+                ),
               ),
-              TextField(
-                controller: _weightController,
-                decoration: InputDecoration(labelText: 'Weight (kg)'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: _heightController,
-                decoration: InputDecoration(labelText: 'Height (m)'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: _bmiController,
-                decoration: InputDecoration(labelText: 'BMI'),
-                readOnly: true,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitProfile,
-                child: Text('Submit'),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }
