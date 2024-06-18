@@ -3,8 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fp_recipemanager/services/recipe_service.dart';
 import 'package:fp_recipemanager/models/recipe.dart';
-import 'package:fp_recipemanager/pages/add_recipe_page.dart';
-import 'package:fp_recipemanager/pages/edit_recipe_page.dart';
+import 'package:fp_recipemanager/pages/recipe_form_page.dart'; // Updated import
 import 'package:fp_recipemanager/pages/recipe_detail_page.dart';
 import 'package:fp_recipemanager/services/storage_service.dart';
 import 'package:intl/intl.dart';
@@ -133,7 +132,7 @@ class _MyRecipePageState extends State<MyRecipePage> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => EditRecipePage(recipe: recipe),
+                                    builder: (context) => RecipeFormPage(recipe: recipe), // Updated to use RecipeFormPage
                                   ),
                                 );
                                 setState(() {});
@@ -162,7 +161,7 @@ class _MyRecipePageState extends State<MyRecipePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddRecipePage(),
+              builder: (context) => RecipeFormPage(), // Updated to use RecipeFormPage
             ),
           );
         },

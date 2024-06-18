@@ -3,17 +3,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fp_recipemanager/components/my_drawer_tile.dart';
 import 'package:fp_recipemanager/pages/add_recipe_page.dart';
+import 'package:fp_recipemanager/pages/category_page.dart';
 import 'package:fp_recipemanager/pages/my_recipe_page.dart';
 import 'package:fp_recipemanager/pages/recipe_page.dart';
 import 'package:fp_recipemanager/pages/user_profile_page.dart';
+import 'package:fp_recipemanager/services/user_profile_service.dart';
+import 'package:fp_recipemanager/models/user_profile.dart';
 
-class MyDrawer extends StatelessWidget {
+class MyDrawer extends StatefulWidget {
   MyDrawer({super.key});
 
+  @override
+  _MyDrawerState createState() => _MyDrawerState();
+}
+
+class _MyDrawerState extends State<MyDrawer> {
   final user = FirebaseAuth.instance.currentUser!;
+  bool isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminStatus();
+  }
 
   void signUserOut() {
     FirebaseAuth.instance.signOut();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    UserProfileService _firestoreService = UserProfileService();
+    UserProfile? userProfile = await _firestoreService.getUserProfile(user.uid);
+    if (userProfile != null && userProfile.isAdmin) {
+      setState(() {
+        isAdmin = true;
+      });
+    }
   }
 
   @override
@@ -43,8 +68,8 @@ class MyDrawer extends StatelessWidget {
           // Settings List Tile
           MyDrawerTile(
               text: "P R O F I L E", icon: Icons.person, onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfilePage(),),);
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfilePage(),),);
           }),
           MyDrawerTile(
               text: "View Recipes", icon: Icons.fastfood, onTap: () {
@@ -56,6 +81,12 @@ class MyDrawer extends StatelessWidget {
             Navigator.pop(context);
             Navigator.push(context, MaterialPageRoute(builder: (context) => MyRecipePage(),),);
           }),
+          if (isAdmin)
+            MyDrawerTile(
+                text: "View Categories", icon: Icons.tag, onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage(),),);
+            }),
           const Spacer(),
           // Logout List Tile
           Padding(

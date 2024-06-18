@@ -6,16 +6,16 @@ import 'package:fp_recipemanager/components/recipe_image.dart';
 import 'package:fp_recipemanager/models/category.dart';
 import 'package:fp_recipemanager/services/category_service.dart';
 
-class EditRecipePage extends StatefulWidget {
-  final Recipe recipe;
+class RecipeFormPage extends StatefulWidget {
+  final Recipe? recipe;
 
-  EditRecipePage({Key? key, required this.recipe}) : super(key: key);
+  RecipeFormPage({Key? key, this.recipe}) : super(key: key);
 
   @override
-  _EditRecipePageState createState() => _EditRecipePageState();
+  _RecipeFormPageState createState() => _RecipeFormPageState();
 }
 
-class _EditRecipePageState extends State<EditRecipePage> {
+class _RecipeFormPageState extends State<RecipeFormPage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
 
@@ -24,16 +24,24 @@ class _EditRecipePageState extends State<EditRecipePage> {
   final _formKey = GlobalKey<FormState>();
 
   String? _imagePath;
+  String? _recipeId;
   String? _selectedCategoryId;
   List<Category> _categories = [];
+
+  bool get isEditing => widget.recipe != null;
 
   @override
   void initState() {
     super.initState();
-    titleController.text = widget.recipe.title;
-    descriptionController.text = widget.recipe.description;
-    _imagePath = widget.recipe.imagePath;
-    _selectedCategoryId = widget.recipe.categoryId;
+    if (isEditing) {
+      titleController.text = widget.recipe!.title;
+      descriptionController.text = widget.recipe!.description;
+      _imagePath = widget.recipe!.imagePath;
+      _recipeId = widget.recipe!.recipeId;
+      _selectedCategoryId = widget.recipe!.categoryId;
+    } else {
+      _recipeId = _recipeService.generateNewRecipeId();
+    }
     _fetchCategories();
   }
 
@@ -55,11 +63,52 @@ class _EditRecipePageState extends State<EditRecipePage> {
     );
   }
 
+  void _saveRecipe() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null && _imagePath != null && _selectedCategoryId != null) {
+        final recipe = Recipe(
+          recipeId: _recipeId!,
+          imagePath: _imagePath!,
+          title: titleController.text,
+          description: descriptionController.text,
+          categoryId: _selectedCategoryId!,
+          createdBy: isEditing ? widget.recipe!.createdBy : user.uid,
+          createdTime: isEditing ? widget.recipe!.createdTime : DateTime.now(),
+        );
+
+        if (isEditing) {
+          await _recipeService.updateRecipe(recipe);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Recipe updated successfully'),
+            ),
+          );
+        } else {
+          await _recipeService.addRecipe(recipe);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Recipe added successfully'),
+            ),
+          );
+        }
+
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('You need to be signed in, have an image, and select a category'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Recipe'),
+        title: Text(isEditing ? 'Edit Recipe' : 'Add Recipe'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -70,7 +119,7 @@ class _EditRecipePageState extends State<EditRecipePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 RecipeImage(
-                  recipeId: widget.recipe.recipeId,
+                  recipeId: _recipeId!,
                   onImagePathChanged: (path) {
                     setState(() {
                       _imagePath = path;
@@ -124,38 +173,8 @@ class _EditRecipePageState extends State<EditRecipePage> {
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      User? user = FirebaseAuth.instance.currentUser;
-                      if (user != null && _imagePath != null && _selectedCategoryId != null) {
-                        final updatedRecipe = Recipe(
-                          recipeId: widget.recipe.recipeId,
-                          imagePath: _imagePath!,
-                          title: titleController.text,
-                          description: descriptionController.text,
-                          categoryId: _selectedCategoryId!,
-                          createdBy: widget.recipe.createdBy, // Retain the original creator
-                          createdTime: widget.recipe.createdTime, // Retain the original creation time
-                        );
-                        await _recipeService.updateRecipe(updatedRecipe);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Recipe updated successfully'),
-                          ),
-                        );
-
-                        Navigator.pop(context);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('You need to be signed in, have an image, and select a category to update the recipe'),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  child: Text('Save Changes'),
+                  onPressed: _saveRecipe,
+                  child: Text(isEditing ? 'Save Changes' : 'Add Recipe'),
                 ),
               ],
             ),

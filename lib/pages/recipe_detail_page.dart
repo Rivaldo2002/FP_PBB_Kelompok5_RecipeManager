@@ -4,15 +4,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/recipe_service.dart';
 import '../models/recipe.dart';
-import '../pages/edit_recipe_page.dart';
+import '../pages/recipe_form_page.dart'; // Updated import
 import '../services/storage_service.dart';
 import '../services/user_profile_service.dart';
+import '../services/category_service.dart';
 import '../models/user_profile.dart';
+import '../models/category.dart';
 
 class RecipeDetailPage extends StatelessWidget {
   final Recipe recipe;
   final StorageService _storageService = StorageService();
   final UserProfileService _userProfileService = UserProfileService();
+  final CategoryService _categoryService = CategoryService();
 
   RecipeDetailPage({required this.recipe});
 
@@ -31,7 +34,7 @@ class RecipeDetailPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditRecipePage(recipe: recipe),
+                    builder: (context) => RecipeFormPage(recipe: recipe), // Updated to use RecipeFormPage
                   ),
                 );
               },
@@ -110,9 +113,26 @@ class RecipeDetailPage extends StatelessWidget {
               recipe.title,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            Text(
-              'Category: ${recipe.categoryId}',
-              style: TextStyle(fontSize: 18),
+            FutureBuilder<Category?>(
+              future: _categoryService.getCategoryById(recipe.categoryId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Text(
+                    'Category: Loading...',
+                    style: TextStyle(fontSize: 18),
+                  );
+                } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                  return Text(
+                    'Category: Unknown',
+                    style: TextStyle(fontSize: 18, color: Colors.red),
+                  );
+                } else {
+                  return Text(
+                    'Category: ${snapshot.data!.categoryName}',
+                    style: TextStyle(fontSize: 18),
+                  );
+                }
+              },
             ),
             SizedBox(height: 8),
             FutureBuilder<UserProfile?>(
