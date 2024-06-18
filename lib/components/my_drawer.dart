@@ -2,11 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fp_recipemanager/components/my_drawer_tile.dart';
-import 'package:fp_recipemanager/pages/add_recipe_page.dart';
-import 'package:fp_recipemanager/pages/category_page.dart';
-import 'package:fp_recipemanager/pages/my_recipe_page.dart';
-import 'package:fp_recipemanager/pages/recipe_page.dart';
-import 'package:fp_recipemanager/pages/user_profile_page.dart';
+import 'package:fp_recipemanager/pages/category/category_page.dart';
+import 'package:fp_recipemanager/pages/recipe/my_recipe_page.dart';
+import 'package:fp_recipemanager/pages/profile/user_profile_page.dart';
 import 'package:fp_recipemanager/services/user_profile_service.dart';
 import 'package:fp_recipemanager/models/user_profile.dart';
 
@@ -72,18 +70,13 @@ class _MyDrawerState extends State<MyDrawer> {
             Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfilePage(),),);
           }),
           MyDrawerTile(
-              text: "View Recipes", icon: Icons.fastfood, onTap: () {
-            Navigator.pop(context);
-            Navigator.push(context, MaterialPageRoute(builder: (context) => RecipePage(),),);
-          }),
-          MyDrawerTile(
-              text: "View My Recipes", icon: Icons.fastfood, onTap: () {
+              text: "M Y  R E C I P E S", icon: Icons.fastfood, onTap: () {
             Navigator.pop(context);
             Navigator.push(context, MaterialPageRoute(builder: (context) => MyRecipePage(),),);
           }),
           if (isAdmin)
             MyDrawerTile(
-                text: "View Categories", icon: Icons.tag, onTap: () {
+                text: "C A T E G O R I E S", icon: Icons.tag, onTap: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryPage(),),);
             }),

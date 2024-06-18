@@ -57,42 +57,62 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
     }
   }
 
+  InputDecoration _inputDecoration(String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      labelStyle: TextStyle(fontWeight: FontWeight.bold), // Bold label style
+    );
+  }
+
+  String formatButtonText(String text) {
+    return text.split('').join(' ').toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Category' : 'Add Category'),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: 'Category Name',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: _inputDecoration('Category Name'),
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: null,
+                decoration: _inputDecoration('Category Description').copyWith(
+                  alignLabelWithHint: true,
                 ),
               ),
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _descriptionController,
-              decoration: InputDecoration(
-                labelText: 'Category Description',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
+              SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saveCategory,
+                  child: Text(formatButtonText(isEditing ? 'Save' : 'Add Category')),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black, // Button background color
+                    foregroundColor: Colors.white, // Button text color
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0), // Same radius as in UserProfilePage
+                    ),
+                  ),
                 ),
               ),
-              maxLines: null,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveCategory,
-              child: Text(isEditing ? 'Save' : 'Add'),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

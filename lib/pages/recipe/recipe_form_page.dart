@@ -48,7 +48,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
   Future<void> _fetchCategories() async {
     _categoryService.getCategory().listen((categories) {
       setState(() {
-        _categories = categories;
+        _categories = [Category(categoryId: '', categoryName: 'None', description: '', createdTime: DateTime.now()), ...categories];
       });
     });
   }
@@ -59,20 +59,21 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.0),
       ),
-      labelStyle: TextStyle(fontWeight: FontWeight.w300),
+      labelStyle: TextStyle(fontWeight: FontWeight.bold), // Bold label style
+      alignLabelWithHint: true, // Ensures hint text is at the top left
     );
   }
 
   void _saveRecipe() async {
     if (_formKey.currentState?.validate() ?? false) {
       User? user = FirebaseAuth.instance.currentUser;
-      if (user != null && _imagePath != null && _selectedCategoryId != null) {
+      if (user != null && _imagePath != null) {
         final recipe = Recipe(
           recipeId: _recipeId!,
           imagePath: _imagePath!,
           title: titleController.text,
           description: descriptionController.text,
-          categoryId: _selectedCategoryId!,
+          categoryId: _selectedCategoryId, // This can now be null
           createdBy: isEditing ? widget.recipe!.createdBy : user.uid,
           createdTime: isEditing ? widget.recipe!.createdTime : DateTime.now(),
         );
@@ -84,6 +85,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               content: Text('Recipe updated successfully'),
             ),
           );
+          Navigator.pop(context, true); // Return true to indicate the recipe was updated
         } else {
           await _recipeService.addRecipe(recipe);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -91,17 +93,20 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               content: Text('Recipe added successfully'),
             ),
           );
+          Navigator.pop(context, true); // Return true to indicate a new recipe was added
         }
-
-        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('You need to be signed in, have an image, and select a category'),
+            content: Text('You need to be signed in and have an image'),
           ),
         );
       }
     }
+  }
+
+  String formatButtonText(String text) {
+    return text.split('').join(' ').toUpperCase();
   }
 
   @override
@@ -112,7 +117,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -160,21 +165,29 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedCategoryId = value;
+                      _selectedCategoryId = value != '' ? value : null; // Set to null if "None" is selected
                     });
                   },
-                  decoration: _inputDecoration('Category'),
+                  decoration: _inputDecoration('Category (Optional)'),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Category is required';
-                    }
-                    return null;
+                    return null; // No validation required
                   },
                 ),
                 SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _saveRecipe,
-                  child: Text(isEditing ? 'Save Changes' : 'Add Recipe'),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveRecipe,
+                    child: Text(formatButtonText(isEditing ? 'Save Changes' : 'Add Recipe')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black, // Button background color
+                      foregroundColor: Colors.white, // Button text color
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0), // Same radius as in UserProfilePage
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -184,3 +197,4 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
     );
   }
 }
+
