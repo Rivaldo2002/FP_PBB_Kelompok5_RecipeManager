@@ -1,6 +1,4 @@
-import 'dart:typed_data';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fp_recipemanager/services/storage_service.dart';
@@ -15,14 +13,13 @@ class ProfilePicture extends StatefulWidget {
 }
 
 class _ProfilePictureState extends State<ProfilePicture> {
-  bool isLoading = false;
-  StorageService storage = StorageService();
-  Uint8List? pickedImage;
+  final StorageService storage = StorageService();
+  String? imageUrl;
 
   @override
   void initState() {
     super.initState();
-    getProfilePicture();
+    loadProfilePicture();
   }
 
   @override
@@ -35,18 +32,21 @@ class _ProfilePictureState extends State<ProfilePicture> {
           decoration: BoxDecoration(
             color: Colors.grey,
             shape: BoxShape.circle,
-            image: pickedImage != null
+            image: imageUrl != null
                 ? DecorationImage(
-                fit: BoxFit.cover,
-                image: Image.memory(pickedImage!, fit: BoxFit.cover).image)
+              fit: BoxFit.cover,
+              image: CachedNetworkImageProvider(imageUrl!),
+            )
                 : null,
           ),
-          child: const Center(
-            child: Icon(
+          child: Center(
+            child: imageUrl == null
+                ? Icon(
               Icons.person_rounded,
               color: Colors.black38,
               size: 35,
-            ),
+            )
+                : null,
           ),
         ),
         Positioned(
@@ -75,20 +75,22 @@ class _ProfilePictureState extends State<ProfilePicture> {
 
   Future<void> onProfileTapped() async {
     final ImagePicker _imagePicker = ImagePicker();
-    bool isLoading = false;
-
     final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
 
-    await storage.uploadFile('profilePicture/${widget.userId}', image);
+    final imagePath = 'profilePicture/${widget.userId}';
+    await storage.uploadFile(imagePath, image);
 
-    final imageBytes = await image.readAsBytes();
-    setState(() => pickedImage = imageBytes);
+    // Get the download URL of the uploaded image
+    String url = await storage.getDownloadURL(imagePath);
+    setState(() => imageUrl = url);
   }
 
-  Future<void> getProfilePicture() async {
-    final imageBytes = await storage.getFile('profilePicture/${widget.userId}');
-    if (imageBytes == null) return;
-    setState(() => pickedImage = imageBytes);
+  Future<void> loadProfilePicture() async {
+    final imagePath = 'profilePicture/${widget.userId}';
+    String? url = await storage.getDownloadURL(imagePath);
+    if (url != null) {
+      setState(() => imageUrl = url);
+    }
   }
 }

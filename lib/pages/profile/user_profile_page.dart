@@ -28,6 +28,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   String? _profilePicturePath;
   bool _isLoading = true;
   bool _isProfileExisting = false;
+  bool? _isAdmin;
 
   @override
   void initState() {
@@ -48,16 +49,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ? DateFormat('yyyy-MM-dd').format(userProfile.dateOfBirth!)
               : '';
           _selectedGender = userProfile.gender;
-          _weightController.text = userProfile.weight != null ? userProfile.weight.toString() : '';
-          _heightController.text = userProfile.height != null ? userProfile.height.toString() : '';
-          _bmiController.text = userProfile.bmi != null ? userProfile.bmi.toString() : '';
+          _weightController.text =
+          userProfile.weight != null ? userProfile.weight.toString() : '';
+          _heightController.text =
+          userProfile.height != null ? userProfile.height.toString() : '';
+          _bmiController.text =
+          userProfile.bmi != null ? userProfile.bmi.toString() : '';
           _calculatedAge = userProfile.age;
           _profilePicturePath = 'profilePicture/${userProfile.userId}';
           _isProfileExisting = true;
+          _isAdmin = userProfile.isAdmin;
         });
       }
     }
-    // Hide loading spinner after user profile is loaded or determined to be non-existing
     setState(() {
       _isLoading = false;
     });
@@ -87,7 +91,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
     if (pickedDate != null) {
       setState(() {
-        _dateOfBirthController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
+        _dateOfBirthController.text =
+            DateFormat('yyyy-MM-dd').format(pickedDate);
         _calculatedAge = AgeCalculator.age(pickedDate).years;
       });
     }
@@ -98,16 +103,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
     if (user != null) {
       UserProfile userProfile = UserProfile(
         userId: user.uid,
-        fullName: _fullNameController.text.isNotEmpty ? _fullNameController.text : null,
+        fullName: _fullNameController.text.isNotEmpty
+            ? _fullNameController.text
+            : null,
         email: user.email!,
         dateOfBirth: _dateOfBirthController.text.isNotEmpty
             ? DateTime.parse(_dateOfBirthController.text)
             : null,
         gender: _selectedGender,
-        weight: _weightController.text.isNotEmpty ? double.parse(_weightController.text) : null,
-        height: _heightController.text.isNotEmpty ? double.parse(_heightController.text) : null,
-        bmi: _bmiController.text.isNotEmpty ? double.parse(_bmiController.text) : null,
+        weight: _weightController.text.isNotEmpty
+            ? double.parse(_weightController.text)
+            : null,
+        height: _heightController.text.isNotEmpty
+            ? double.parse(_heightController.text)
+            : null,
+        bmi: _bmiController.text.isNotEmpty
+            ? double.parse(_bmiController.text)
+            : null,
         profilePicturePath: 'profilePicture/${user.uid}',
+        isAdmin: _isAdmin ?? false,
       );
 
       if (_isProfileExisting) {
@@ -116,7 +130,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         await _firestoreService.createUserProfile(userProfile);
       }
 
-      // Show success dialog
       showDialog(
         context: context,
         builder: (context) {
@@ -149,6 +162,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      labelStyle: TextStyle(fontWeight: FontWeight.bold), // Added bold style
+      alignLabelWithHint: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     User? user = _auth.currentUser;
@@ -171,86 +195,102 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
       )
           : Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             children: [
               if (user != null) ProfilePicture(userId: user.uid),
+              SizedBox(height: 10),
+              Text(
+                _isAdmin! ? 'A D M I N' : 'U S E R',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 15),
               TextField(
                 controller: _fullNameController,
-                decoration: InputDecoration(labelText: 'Full Name'),
+                decoration: _inputDecoration('Full Name'),
               ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _dateOfBirthController,
-                    decoration: InputDecoration(
-                      labelText: 'Date of Birth (YYYY-MM-DD)',
-                      icon: Icon(Icons.calendar_today),
-                    ),
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                  ),
-                  SizedBox(height: 20),
-                  if (_calculatedAge != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(40.0, 0, 0, 0),
-                      child: Text('Age: $_calculatedAge years', style: TextStyle(fontSize: 16)),
-                    ),
-                  SizedBox(height: 20),
-                ],
+              SizedBox(height: 15),
+              TextField(
+                controller: _dateOfBirthController,
+                decoration: _inputDecoration(
+                  'Date of Birth (YYYY-MM-DD)',
+                ).copyWith(icon: Icon(Icons.calendar_today)),
+                readOnly: true,
+                onTap: () => _selectDate(context),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Gender', style: TextStyle(fontSize: 16)),
-                  ListTile(
-                    title: const Text('Male'),
-                    leading: Radio<String>(
-                      value: 'Male',
-                      groupValue: _selectedGender,
-                      onChanged: (String? value) {
-                        setState(() {
-                          _selectedGender = value;
-                        });
-                      },
+              SizedBox(height: 15),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Gender', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('Male'),
+                            value: 'Male',
+                            groupValue: _selectedGender,
+                            onChanged: (String? value) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('Female'),
+                            value: 'Female',
+                            groupValue: _selectedGender,
+                            onChanged: (String? value) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  ListTile(
-                    title: const Text('Female'),
-                    leading: Radio<String>(
-                      value: 'Female',
-                      groupValue: _selectedGender,
-                      onChanged: (String? value) {
-                        setState(() {
-                          _selectedGender = value;
-                        });
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              SizedBox(height: 15),
               TextField(
                 controller: _weightController,
-                decoration: InputDecoration(labelText: 'Weight (kg)'),
+                decoration: _inputDecoration('Weight (kg)'),
                 keyboardType: TextInputType.number,
               ),
+              SizedBox(height: 15),
               TextField(
                 controller: _heightController,
-                decoration: InputDecoration(labelText: 'Height (m)'),
+                decoration: _inputDecoration('Height (m)'),
                 keyboardType: TextInputType.number,
               ),
+              SizedBox(height: 15),
               TextField(
                 controller: _bmiController,
-                decoration: InputDecoration(labelText: 'BMI'),
+                decoration: _inputDecoration('BMI'),
                 readOnly: true,
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 15),
               ElevatedButton(
                 onPressed: _submitProfile,
-                child: Text('Submit'),
+                child: Text('S U B M I T'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
               ),
             ],
           ),

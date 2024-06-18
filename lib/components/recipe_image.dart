@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fp_recipemanager/services/storage_service.dart';
@@ -18,14 +18,13 @@ class RecipeImage extends StatefulWidget {
 }
 
 class _RecipeImageState extends State<RecipeImage> {
-  bool isLoading = false;
-  StorageService storage = StorageService();
-  Uint8List? pickedImage;
+  final StorageService storage = StorageService();
+  String? imageUrl;
 
   @override
   void initState() {
     super.initState();
-    getRecipeImage();
+    loadRecipeImage();
   }
 
   @override
@@ -42,15 +41,15 @@ class _RecipeImageState extends State<RecipeImage> {
                 height: size, // Making the height equal to the width to form a square
                 decoration: BoxDecoration(
                   color: Colors.grey,
-                  image: pickedImage != null
+                  image: imageUrl != null
                       ? DecorationImage(
                     fit: BoxFit.cover,
-                    image: Image.memory(pickedImage!, fit: BoxFit.cover).image,
+                    image: CachedNetworkImageProvider(imageUrl!),
                   )
                       : null,
                 ),
                 child: Center(
-                  child: pickedImage == null
+                  child: imageUrl == null
                       ? Icon(
                     Icons.fastfood,
                     color: Colors.black38,
@@ -94,16 +93,19 @@ class _RecipeImageState extends State<RecipeImage> {
     final imagePath = 'recipeImage/${widget.recipeId}';
     await storage.uploadFile(imagePath, image);
 
-    final imageBytes = await image.readAsBytes();
-    setState(() => pickedImage = imageBytes);
+    // Get the download URL of the uploaded image
+    String url = await storage.getDownloadURL(imagePath);
+    setState(() => imageUrl = url);
 
     // Notify the parent widget of the image path change
     widget.onImagePathChanged(imagePath);
   }
 
-  Future<void> getRecipeImage() async {
-    final imageBytes = await storage.getFile('recipeImage/${widget.recipeId}');
-    if (imageBytes == null) return;
-    setState(() => pickedImage = imageBytes);
+  Future<void> loadRecipeImage() async {
+    final imagePath = 'recipeImage/${widget.recipeId}';
+    String? url = await storage.getDownloadURL(imagePath);
+    if (url != null) {
+      setState(() => imageUrl = url);
+    }
   }
 }

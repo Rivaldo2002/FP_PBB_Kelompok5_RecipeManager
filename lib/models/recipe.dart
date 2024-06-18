@@ -3,7 +3,7 @@ class Recipe {
   String imagePath;
   String title;
   String description;
-  String categoryId;
+  String? categoryId; // Made optional
   String createdBy;
   DateTime createdTime;
 
@@ -12,7 +12,7 @@ class Recipe {
     required this.imagePath,
     required this.title,
     required this.description,
-    required this.categoryId,
+    this.categoryId, // Made optional
     required this.createdBy,
     required this.createdTime,
   });
@@ -35,7 +35,7 @@ class Recipe {
       imagePath: map['imagePath'] ?? '',
       title: map['title'] ?? '',
       description: map['description'] ?? '',
-      categoryId: map['categoryId'] ?? '',
+      categoryId: map['categoryId'],
       createdBy: map['createdBy'] ?? '',
       createdTime: map['createdTime'] != null ? DateTime.parse(map['createdTime']) : DateTime.now(),
     );

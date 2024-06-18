@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fp_recipemanager/pages/register_page.dart';
-import 'login_page.dart';
+import 'package:fp_recipemanager/pages/auth/register_page.dart';
+import 'package:fp_recipemanager/pages/auth/login_page.dart';
 
 class LoginOrRegisterPage extends StatefulWidget {
   const LoginOrRegisterPage({super.key});

@@ -11,7 +11,6 @@ class RecipeService {
 
   Future<void> addRecipe(Recipe recipe) {
     final docRef = _recipesCollection.doc(recipe.recipeId);
-
     return docRef.set(recipe.toMap());
   }
 
