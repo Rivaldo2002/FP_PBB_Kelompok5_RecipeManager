@@ -18,6 +18,7 @@ class RecipeFormPage extends StatefulWidget {
 class _RecipeFormPageState extends State<RecipeFormPage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
+  final List<TextEditingController> stepControllers = [];
 
   final RecipeService _recipeService = RecipeService();
   final CategoryService _categoryService = CategoryService();
@@ -33,22 +34,38 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
   @override
   void initState() {
     super.initState();
+    _initializeForm();
+    _fetchCategories();
+  }
+
+  void _initializeForm() {
     if (isEditing) {
+
+      // print("Editing recipe: ${widget.recipe!.title}");
+      // print("Steps: ${widget.recipe!.steps}");
+
       titleController.text = widget.recipe!.title;
       descriptionController.text = widget.recipe!.description;
       _imagePath = widget.recipe!.imagePath;
       _recipeId = widget.recipe!.recipeId;
       _selectedCategoryId = widget.recipe!.categoryId;
+      if (widget.recipe!.steps != null) {
+        for (var step in widget.recipe!.steps!) {
+          stepControllers.add(TextEditingController(text: step));
+        }
+      }
     } else {
       _recipeId = _recipeService.generateNewRecipeId();
     }
-    _fetchCategories();
   }
 
   Future<void> _fetchCategories() async {
     _categoryService.getCategory().listen((categories) {
       setState(() {
-        _categories = [Category(categoryId: '', categoryName: 'None', description: '', createdTime: DateTime.now()), ...categories];
+        _categories = [
+          Category(categoryId: '', categoryName: 'None', description: '', createdTime: DateTime.now()),
+          ...categories
+        ];
       });
     });
   }
@@ -59,9 +76,21 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.0),
       ),
-      labelStyle: TextStyle(fontWeight: FontWeight.bold), // Bold label style
-      alignLabelWithHint: true, // Ensures hint text is at the top left
+      labelStyle: TextStyle(fontWeight: FontWeight.bold),
+      alignLabelWithHint: true,
     );
+  }
+
+  void _addStep() {
+    setState(() {
+      stepControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeStep(int index) {
+    setState(() {
+      stepControllers.removeAt(index);
+    });
   }
 
   void _saveRecipe() async {
@@ -73,7 +102,8 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
           imagePath: _imagePath!,
           title: titleController.text,
           description: descriptionController.text,
-          categoryId: _selectedCategoryId, // This can now be null
+          steps: stepControllers.map((controller) => controller.text).toList(),
+          categoryId: _selectedCategoryId,
           createdBy: isEditing ? widget.recipe!.createdBy : user.uid,
           createdTime: isEditing ? widget.recipe!.createdTime : DateTime.now(),
         );
@@ -85,7 +115,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               content: Text('Recipe updated successfully'),
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate the recipe was updated
+          Navigator.pop(context, true);
         } else {
           await _recipeService.addRecipe(recipe);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -93,7 +123,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               content: Text('Recipe added successfully'),
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate a new recipe was added
+          Navigator.pop(context, true);
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -145,7 +175,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                 SizedBox(height: 20),
                 TextFormField(
                   controller: descriptionController,
-                  maxLines: 10,
+                  maxLines: 3,
                   decoration: _inputDecoration('Description'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -153,6 +183,50 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                     }
                     return null;
                   },
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Steps',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: stepControllers.length,
+                  itemBuilder: (context, index) {
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: stepControllers[index],
+                                decoration: _inputDecoration('Step ${index + 1}'),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Step is required';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.remove_circle),
+                              onPressed: () => _removeStep(index),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _addStep,
+                    child: Text('Add Step'),
+                  ),
                 ),
                 SizedBox(height: 20),
                 DropdownButtonFormField<String>(
@@ -165,12 +239,12 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedCategoryId = value != '' ? value : null; // Set to null if "None" is selected
+                      _selectedCategoryId = value != '' ? value : null;
                     });
                   },
                   decoration: _inputDecoration('Category (Optional)'),
                   validator: (value) {
-                    return null; // No validation required
+                    return null;
                   },
                 ),
                 SizedBox(height: 20),
@@ -180,11 +254,11 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                     onPressed: _saveRecipe,
                     child: Text(formatButtonText(isEditing ? 'Save Changes' : 'Add Recipe')),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black, // Button background color
-                      foregroundColor: Colors.white, // Button text color
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 16.0),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0), // Same radius as in UserProfilePage
+                        borderRadius: BorderRadius.circular(10.0),
                       ),
                     ),
                   ),
@@ -197,4 +271,3 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
     );
   }
 }
-

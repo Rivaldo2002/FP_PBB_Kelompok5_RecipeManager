@@ -295,6 +295,30 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     recipe.description,
                     style: TextStyle(fontSize: 16),
                   ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Steps',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  recipe.steps != null && recipe.steps!.isNotEmpty
+                      ? ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: recipe.steps!.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              leading: CircleAvatar(
+                                radius: 15,
+                                child: Text('${index + 1}'),
+                              ),
+                              title: Text(recipe.steps![index]),
+                            );
+                          },
+                        )
+                      : Text(
+                          'No steps available for this recipe.',
+                          style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic),
+                        ),
                 ],
               ),
             ),
