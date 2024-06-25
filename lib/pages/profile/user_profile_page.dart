@@ -28,7 +28,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   String? _profilePicturePath;
   bool _isLoading = true;
   bool _isProfileExisting = false;
-  bool? _isAdmin;
+  bool _isAdmin = false; // Initialize _isAdmin to false
 
   @override
   void initState() {
@@ -58,7 +58,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _calculatedAge = userProfile.age;
           _profilePicturePath = 'profilePicture/${userProfile.userId}';
           _isProfileExisting = true;
-          _isAdmin = userProfile.isAdmin;
+          _isAdmin = userProfile.isAdmin; // Set _isAdmin based on user profile
         });
       }
     }
@@ -121,7 +121,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ? double.parse(_bmiController.text)
             : null,
         profilePicturePath: 'profilePicture/${user.uid}',
-        isAdmin: _isAdmin ?? false,
+        isAdmin: _isAdmin, // Set isAdmin
       );
 
       if (_isProfileExisting) {
@@ -202,7 +202,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               if (user != null) ProfilePicture(userId: user.uid),
               SizedBox(height: 10),
               Text(
-                _isAdmin! ? 'A D M I N' : 'U S E R',
+                _isAdmin ? 'A D M I N' : 'U S E R', // Check _isAdmin before using it
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 15),

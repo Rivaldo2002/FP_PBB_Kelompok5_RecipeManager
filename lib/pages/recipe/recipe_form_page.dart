@@ -19,6 +19,8 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final List<TextEditingController> stepControllers = [];
+  final Map<String, TextEditingController> ingredientNameControllers = {};
+  final Map<String, TextEditingController> ingredientQuantityControllers = {};
 
   final RecipeService _recipeService = RecipeService();
   final CategoryService _categoryService = CategoryService();
@@ -45,10 +47,18 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
       _imagePath = widget.recipe!.imagePath;
       _recipeId = widget.recipe!.recipeId;
       _selectedCategoryId = widget.recipe!.categoryId;
+
       if (widget.recipe!.steps != null) {
         for (var step in widget.recipe!.steps!) {
           stepControllers.add(TextEditingController(text: step));
         }
+      }
+
+      if (widget.recipe!.ingredients != null) {
+        widget.recipe!.ingredients!.forEach((name, quantity) {
+          ingredientNameControllers[name] = TextEditingController(text: name);
+          ingredientQuantityControllers[name] = TextEditingController(text: quantity);
+        });
       }
     } else {
       _recipeId = _recipeService.generateNewRecipeId();
@@ -89,16 +99,40 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
     });
   }
 
+  void _addIngredient() {
+    setState(() {
+      final ingredientKey = DateTime.now().toIso8601String(); // Unique key for each ingredient
+      ingredientNameControllers[ingredientKey] = TextEditingController();
+      ingredientQuantityControllers[ingredientKey] = TextEditingController();
+    });
+  }
+
+  void _removeIngredient(String key) {
+    setState(() {
+      ingredientNameControllers.remove(key);
+      ingredientQuantityControllers.remove(key);
+    });
+  }
+
   void _saveRecipe() async {
     if (_formKey.currentState?.validate() ?? false) {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null && _imagePath != null) {
+        final ingredients = <String, String?>{};
+        ingredientNameControllers.forEach((key, nameController) {
+          final quantityController = ingredientQuantityControllers[key];
+          if (nameController.text.isNotEmpty) {
+            ingredients[nameController.text] = quantityController?.text;
+          }
+        });
+
         final recipe = Recipe(
           recipeId: _recipeId!,
           imagePath: _imagePath!,
           title: titleController.text,
           description: descriptionController.text,
           steps: stepControllers.map((controller) => controller.text).toList(),
+          ingredients: ingredients.isNotEmpty ? ingredients : null,
           categoryId: _selectedCategoryId,
           createdBy: isEditing ? widget.recipe!.createdBy : user.uid,
           createdTime: isEditing ? widget.recipe!.createdTime : DateTime.now(),
@@ -179,6 +213,58 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                     }
                     return null;
                   },
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Ingredients',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: ingredientNameControllers.length,
+                  itemBuilder: (context, index) {
+                    final key = ingredientNameControllers.keys.elementAt(index);
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: ingredientNameControllers[key],
+                                decoration: _inputDecoration('Ingredient ${index + 1} Name'),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Ingredient name is required';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: ingredientQuantityControllers[key],
+                                decoration: _inputDecoration('Quantity (Optional)'),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.remove_circle),
+                              onPressed: () => _removeIngredient(key),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _addIngredient,
+                    child: Text('Add Ingredient'),
+                  ),
                 ),
                 SizedBox(height: 20),
                 Text(

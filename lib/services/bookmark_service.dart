@@ -49,7 +49,12 @@ class BookmarkService {
       for (var doc in snapshot.docs) {
         final bookmark = Bookmark.fromMap(doc.data() as Map<String, dynamic>);
         final recipe = await _recipeService.getRecipeById(bookmark.recipeId);
-        recipes.add(recipe);
+        if (recipe != null) {
+          recipes.add(recipe);
+        } else {
+          // If the recipe doesn't exist, remove the bookmark
+          await removeBookmark(userId, bookmark.recipeId);
+        }
       }
       return recipes;
     });

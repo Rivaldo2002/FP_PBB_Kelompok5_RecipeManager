@@ -27,7 +27,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   final CategoryService _categoryService = CategoryService();
   final RecipeService _recipeService = RecipeService();
 
-  late Future<Recipe> _recipeFuture;
+  late Future<Recipe?> _recipeFuture;
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   Widget build(BuildContext context) {
     User? currentUser = FirebaseAuth.instance.currentUser;
 
-    return FutureBuilder<Recipe>(
+    return FutureBuilder<Recipe?>(
       future: _recipeFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -55,7 +55,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
             ),
             body: Center(child: CircularProgressIndicator()),
           );
-        } else if (snapshot.hasError || !snapshot.hasData) {
+        } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
           return Scaffold(
             appBar: AppBar(
               title: Text('Error'),
@@ -330,6 +330,26 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     style: TextStyle(fontSize: 16),
                   ),
                   SizedBox(height: 16),
+                  if (recipe.ingredients != null && recipe.ingredients!.isNotEmpty) ...[
+                    Text(
+                      'Ingredients',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: recipe.ingredients!.length,
+                      itemBuilder: (context, index) {
+                        String ingredient = recipe.ingredients!.keys.elementAt(index);
+                        String? quantity = recipe.ingredients![ingredient];
+                        return ListTile(
+                          title: Text(ingredient),
+                          subtitle: quantity != null ? Text(quantity) : null,
+                        );
+                      },
+                    ),
+                    SizedBox(height: 16),
+                  ],
                   Text(
                     'Steps',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

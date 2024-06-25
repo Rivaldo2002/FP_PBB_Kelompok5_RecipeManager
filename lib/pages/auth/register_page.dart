@@ -122,7 +122,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // Welcome Back
                 Text(
-                  "Start eating healthier!",
+                  "Become a part of our service!",
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 SizedBox(height: 25),
