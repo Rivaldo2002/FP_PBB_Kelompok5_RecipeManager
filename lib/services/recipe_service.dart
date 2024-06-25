@@ -38,8 +38,12 @@ class RecipeService {
     });
   }
 
-  Future<Recipe> getRecipeById(String recipeId) async {
+  Future<Recipe?> getRecipeById(String recipeId) async {
     DocumentSnapshot recipeDoc = await _recipesCollection.doc(recipeId).get();
-    return Recipe.fromMap(recipeDoc.data() as Map<String, dynamic>)..recipeId = recipeDoc.id;
+    if (recipeDoc.exists) {
+      return Recipe.fromMap(recipeDoc.data() as Map<String, dynamic>)..recipeId = recipeDoc.id;
+    } else {
+      return null;
+    }
   }
 }

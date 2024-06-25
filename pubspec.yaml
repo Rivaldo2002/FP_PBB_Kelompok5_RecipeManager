@@ -48,6 +48,7 @@ dependencies:
   flutter_spinkit: ^5.2.1
   cached_network_image: ^3.3.1
   image: ^4.2.0
+  image_cropper: ^7.0.5
 
 dev_dependencies:
   flutter_test:

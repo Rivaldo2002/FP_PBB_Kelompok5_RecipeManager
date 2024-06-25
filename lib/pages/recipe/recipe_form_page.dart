@@ -18,6 +18,9 @@ class RecipeFormPage extends StatefulWidget {
 class _RecipeFormPageState extends State<RecipeFormPage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
+  final List<TextEditingController> stepControllers = [];
+  final Map<String, TextEditingController> ingredientNameControllers = {};
+  final Map<String, TextEditingController> ingredientQuantityControllers = {};
 
   final RecipeService _recipeService = RecipeService();
   final CategoryService _categoryService = CategoryService();
@@ -33,22 +36,42 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
   @override
   void initState() {
     super.initState();
+    _initializeForm();
+    _fetchCategories();
+  }
+
+  void _initializeForm() {
     if (isEditing) {
       titleController.text = widget.recipe!.title;
       descriptionController.text = widget.recipe!.description;
       _imagePath = widget.recipe!.imagePath;
       _recipeId = widget.recipe!.recipeId;
       _selectedCategoryId = widget.recipe!.categoryId;
+
+      if (widget.recipe!.steps != null) {
+        for (var step in widget.recipe!.steps!) {
+          stepControllers.add(TextEditingController(text: step));
+        }
+      }
+
+      if (widget.recipe!.ingredients != null) {
+        widget.recipe!.ingredients!.forEach((name, quantity) {
+          ingredientNameControllers[name] = TextEditingController(text: name);
+          ingredientQuantityControllers[name] = TextEditingController(text: quantity);
+        });
+      }
     } else {
       _recipeId = _recipeService.generateNewRecipeId();
     }
-    _fetchCategories();
   }
 
   Future<void> _fetchCategories() async {
     _categoryService.getCategory().listen((categories) {
       setState(() {
-        _categories = [Category(categoryId: '', categoryName: 'None', description: '', createdTime: DateTime.now()), ...categories];
+        _categories = [
+          Category(categoryId: '', categoryName: 'None', description: '', createdTime: DateTime.now()),
+          ...categories
+        ];
       });
     });
   }
@@ -59,21 +82,58 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.0),
       ),
-      labelStyle: TextStyle(fontWeight: FontWeight.bold), // Bold label style
-      alignLabelWithHint: true, // Ensures hint text is at the top left
+      labelStyle: TextStyle(fontWeight: FontWeight.bold),
+      alignLabelWithHint: true,
     );
+  }
+
+  void _addStep() {
+    setState(() {
+      stepControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeStep(int index) {
+    setState(() {
+      stepControllers.removeAt(index);
+    });
+  }
+
+  void _addIngredient() {
+    setState(() {
+      final ingredientKey = DateTime.now().toIso8601String(); // Unique key for each ingredient
+      ingredientNameControllers[ingredientKey] = TextEditingController();
+      ingredientQuantityControllers[ingredientKey] = TextEditingController();
+    });
+  }
+
+  void _removeIngredient(String key) {
+    setState(() {
+      ingredientNameControllers.remove(key);
+      ingredientQuantityControllers.remove(key);
+    });
   }
 
   void _saveRecipe() async {
     if (_formKey.currentState?.validate() ?? false) {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null && _imagePath != null) {
+        final ingredients = <String, String?>{};
+        ingredientNameControllers.forEach((key, nameController) {
+          final quantityController = ingredientQuantityControllers[key];
+          if (nameController.text.isNotEmpty) {
+            ingredients[nameController.text] = quantityController?.text;
+          }
+        });
+
         final recipe = Recipe(
           recipeId: _recipeId!,
           imagePath: _imagePath!,
           title: titleController.text,
           description: descriptionController.text,
-          categoryId: _selectedCategoryId, // This can now be null
+          steps: stepControllers.map((controller) => controller.text).toList(),
+          ingredients: ingredients.isNotEmpty ? ingredients : null,
+          categoryId: _selectedCategoryId,
           createdBy: isEditing ? widget.recipe!.createdBy : user.uid,
           createdTime: isEditing ? widget.recipe!.createdTime : DateTime.now(),
         );
@@ -85,7 +145,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               content: Text('Recipe updated successfully'),
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate the recipe was updated
+          Navigator.pop(context, true);
         } else {
           await _recipeService.addRecipe(recipe);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -93,7 +153,7 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
               content: Text('Recipe added successfully'),
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate a new recipe was added
+          Navigator.pop(context, true);
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -155,6 +215,102 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                   },
                 ),
                 SizedBox(height: 20),
+                Text(
+                  'Ingredients',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: ingredientNameControllers.length,
+                  itemBuilder: (context, index) {
+                    final key = ingredientNameControllers.keys.elementAt(index);
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: ingredientNameControllers[key],
+                                decoration: _inputDecoration('Ingredient ${index + 1} Name'),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Ingredient name is required';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: ingredientQuantityControllers[key],
+                                decoration: _inputDecoration('Quantity (Optional)'),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.remove_circle),
+                              onPressed: () => _removeIngredient(key),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _addIngredient,
+                    child: Text('Add Ingredient'),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Steps',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: stepControllers.length,
+                  itemBuilder: (context, index) {
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: stepControllers[index],
+                                decoration: _inputDecoration('Step ${index + 1}'),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Step is required';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.remove_circle),
+                              onPressed: () => _removeStep(index),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _addStep,
+                    child: Text('Add Step'),
+                  ),
+                ),
+                SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   value: _selectedCategoryId,
                   items: _categories.map((Category category) {
@@ -165,12 +321,12 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedCategoryId = value != '' ? value : null; // Set to null if "None" is selected
+                      _selectedCategoryId = value != '' ? value : null;
                     });
                   },
                   decoration: _inputDecoration('Category (Optional)'),
                   validator: (value) {
-                    return null; // No validation required
+                    return null;
                   },
                 ),
                 SizedBox(height: 20),
@@ -180,11 +336,11 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
                     onPressed: _saveRecipe,
                     child: Text(formatButtonText(isEditing ? 'Save Changes' : 'Add Recipe')),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black, // Button background color
-                      foregroundColor: Colors.white, // Button text color
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 16.0),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0), // Same radius as in UserProfilePage
+                        borderRadius: BorderRadius.circular(10.0),
                       ),
                     ),
                   ),
@@ -197,4 +353,3 @@ class _RecipeFormPageState extends State<RecipeFormPage> {
     );
   }
 }
-

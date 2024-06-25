@@ -3,7 +3,9 @@ class Recipe {
   String imagePath;
   String title;
   String description;
-  String? categoryId; // Made optional
+  List<String>? steps;
+  Map<String, String?>? ingredients;
+  String? categoryId;
   String createdBy;
   DateTime createdTime;
 
@@ -12,7 +14,9 @@ class Recipe {
     required this.imagePath,
     required this.title,
     required this.description,
-    this.categoryId, // Made optional
+    this.steps,
+    this.ingredients,
+    this.categoryId,
     required this.createdBy,
     required this.createdTime,
   });
@@ -23,6 +27,8 @@ class Recipe {
       'imagePath': imagePath,
       'title': title,
       'description': description,
+      'steps': steps,
+      'ingredients': ingredients,
       'categoryId': categoryId,
       'createdBy': createdBy,
       'createdTime': createdTime.toIso8601String(),
@@ -35,6 +41,8 @@ class Recipe {
       imagePath: map['imagePath'] ?? '',
       title: map['title'] ?? '',
       description: map['description'] ?? '',
+      steps: map['steps'] != null ? List<String>.from(map['steps']) : null,
+      ingredients: map['ingredients'] != null ? Map<String, String?>.from(map['ingredients']) : null,
       categoryId: map['categoryId'],
       createdBy: map['createdBy'] ?? '',
       createdTime: map['createdTime'] != null ? DateTime.parse(map['createdTime']) : DateTime.now(),

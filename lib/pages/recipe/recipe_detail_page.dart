@@ -10,6 +10,7 @@ import 'package:fp_recipemanager/services/user_profile_service.dart';
 import 'package:fp_recipemanager/services/category_service.dart';
 import 'package:fp_recipemanager/models/user_profile.dart';
 import 'package:fp_recipemanager/models/category.dart';
+import 'package:fp_recipemanager/components/bookmark_button.dart';
 
 class RecipeDetailPage extends StatefulWidget {
   final Recipe recipe;
@@ -26,7 +27,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   final CategoryService _categoryService = CategoryService();
   final RecipeService _recipeService = RecipeService();
 
-  late Future<Recipe> _recipeFuture;
+  late Future<Recipe?> _recipeFuture;
 
   @override
   void initState() {
@@ -44,7 +45,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   Widget build(BuildContext context) {
     User? currentUser = FirebaseAuth.instance.currentUser;
 
-    return FutureBuilder<Recipe>(
+    return FutureBuilder<Recipe?>(
       future: _recipeFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -54,7 +55,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
             ),
             body: Center(child: CircularProgressIndicator()),
           );
-        } else if (snapshot.hasError || !snapshot.hasData) {
+        } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
           return Scaffold(
             appBar: AppBar(
               title: Text('Error'),
@@ -93,60 +94,93 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     future: _storageService.getDownloadURL(recipe.imagePath),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(16.0),
-                          child: Container(
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.width,
-                            color: Colors.grey,
-                            child: Center(
-                              child: Icon(
-                                Icons.fastfood,
-                                size: 100,
-                                color: Colors.white,
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16.0),
+                              child: Container(
+                                width: double.infinity,
+                                height: MediaQuery.of(context).size.width,
+                                color: Colors.grey,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.fastfood,
+                                    size: 100,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: BookmarkButton(
+                                recipeId: recipe.recipeId,
+                              ),
+                            ),
+                          ],
                         );
                       } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(16.0),
-                          child: Container(
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.width,
-                            color: Colors.grey,
-                            child: Center(
-                              child: Icon(
-                                Icons.fastfood,
-                                size: 100,
-                                color: Colors.white,
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16.0),
+                              child: Container(
+                                width: double.infinity,
+                                height: MediaQuery.of(context).size.width,
+                                color: Colors.grey,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.fastfood,
+                                    size: 100,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: BookmarkButton(
+                                recipeId: recipe.recipeId,
+                              ),
+                            ),
+                          ],
                         );
                       } else {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(16.0),
-                          child: CachedNetworkImage(
-                            imageUrl: snapshot.data!,
-                            placeholder: (context, url) => Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.width,
-                              color: Colors.grey,
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.width,
-                              color: Colors.grey,
-                              child: Center(
-                                child: Icon(Icons.error),
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16.0),
+                              child: CachedNetworkImage(
+                                imageUrl: snapshot.data!,
+                                placeholder: (context, url) => Container(
+                                  width: double.infinity,
+                                  height: MediaQuery.of(context).size.width,
+                                  color: Colors.grey,
+                                  child: Center(child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  width: double.infinity,
+                                  height: MediaQuery.of(context).size.width,
+                                  color: Colors.grey,
+                                  child: Center(
+                                    child: Icon(Icons.error),
+                                  ),
+                                ),
+                                width: double.infinity,
+                                height: MediaQuery.of(context).size.width,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.width,
-                            fit: BoxFit.cover,
-                          ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: BookmarkButton(
+                                recipeId: recipe.recipeId,
+                              ),
+                            ),
+                          ],
                         );
                       }
                     },
@@ -294,6 +328,50 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                   Text(
                     recipe.description,
                     style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 16),
+                  if (recipe.ingredients != null && recipe.ingredients!.isNotEmpty) ...[
+                    Text(
+                      'Ingredients',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: recipe.ingredients!.length,
+                      itemBuilder: (context, index) {
+                        String ingredient = recipe.ingredients!.keys.elementAt(index);
+                        String? quantity = recipe.ingredients![ingredient];
+                        return ListTile(
+                          title: Text(ingredient),
+                          subtitle: quantity != null ? Text(quantity) : null,
+                        );
+                      },
+                    ),
+                    SizedBox(height: 16),
+                  ],
+                  Text(
+                    'Steps',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  recipe.steps != null && recipe.steps!.isNotEmpty
+                      ? ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: recipe.steps!.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        leading: CircleAvatar(
+                          radius: 15,
+                          child: Text('${index + 1}'),
+                        ),
+                        title: Text(recipe.steps![index]),
+                      );
+                    },
+                  )
+                      : Text(
+                    'No steps available for this recipe.',
+                    style: TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic),
                   ),
                 ],
               ),
