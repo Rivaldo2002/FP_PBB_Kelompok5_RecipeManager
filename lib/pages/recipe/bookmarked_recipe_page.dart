@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fp_recipemanager/services/recipe_service.dart';
 import 'package:fp_recipemanager/models/recipe.dart';
-import 'package:fp_recipemanager/pages/recipe/recipe_form_page.dart';
 import 'package:fp_recipemanager/pages/recipe/recipe_detail_page.dart';
 import 'package:fp_recipemanager/services/storage_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fp_recipemanager/models/category.dart';
 import 'package:fp_recipemanager/services/category_service.dart';
-import 'package:fp_recipemanager/components/my_drawer.dart';
 import 'package:fp_recipemanager/models/user_profile.dart';
 import 'package:fp_recipemanager/services/user_profile_service.dart';
 import 'package:intl/intl.dart';
@@ -17,12 +15,12 @@ import 'package:provider/provider.dart';
 
 import '../../components/bookmark_button.dart';
 
-class RecipePage extends StatefulWidget {
+class BookmarkedRecipesPage extends StatefulWidget {
   @override
-  _RecipePageState createState() => _RecipePageState();
+  _BookmarkedRecipesPageState createState() => _BookmarkedRecipesPageState();
 }
 
-class _RecipePageState extends State<RecipePage> {
+class _BookmarkedRecipesPageState extends State<BookmarkedRecipesPage> {
   final RecipeService _recipeService = RecipeService();
   final StorageService _storageService = StorageService();
   final CategoryService _categoryService = CategoryService();
@@ -84,7 +82,7 @@ class _RecipePageState extends State<RecipePage> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search Recipes',
+                hintText: 'Search Bookmarked Recipes',
                 hintStyle: TextStyle(color: Colors.black54),
                 filled: true,
                 fillColor: Colors.white,
@@ -107,7 +105,6 @@ class _RecipePageState extends State<RecipePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      drawer: MyDrawer(),
       body: Container(
         padding: EdgeInsets.all(8.0),
         child: Column(
@@ -148,7 +145,7 @@ class _RecipePageState extends State<RecipePage> {
             SizedBox(height: 10),
             Expanded(
               child: StreamBuilder<List<Recipe>>(
-                stream: _recipeService.getRecipes(),
+                stream: _bookmarkService.getBookmarkedRecipes(currentUser!.uid),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
@@ -172,7 +169,7 @@ class _RecipePageState extends State<RecipePage> {
                   }).toList();
 
                   if (filteredRecipes.isEmpty) {
-                    return Center(child: Text('No recipes found'));
+                    return Center(child: Text('No bookmarked recipes found'));
                   }
 
                   return GridView.builder(
@@ -181,15 +178,13 @@ class _RecipePageState extends State<RecipePage> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 8.0,
                       mainAxisSpacing: 8.0,
-                      childAspectRatio:
-                          3/4,
+                      childAspectRatio: 3 / 4,
                     ),
                     itemCount: filteredRecipes.length,
                     itemBuilder: (context, index) {
                       final recipe = filteredRecipes[index];
                       return FutureBuilder<String?>(
-                        future:
-                            _storageService.getDownloadURL(recipe.imagePath),
+                        future: _storageService.getDownloadURL(recipe.imagePath),
                         builder: (context, imageSnapshot) {
                           Widget imageWidget;
                           if (imageSnapshot.connectionState ==
@@ -259,7 +254,8 @@ class _RecipePageState extends State<RecipePage> {
                                     child: Stack(
                                       children: [
                                         ClipRRect(
-                                          borderRadius: BorderRadius.vertical(top: Radius.circular(8.0)),
+                                          borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(8.0)),
                                           child: Container(
                                             color: Colors.grey,
                                             child: imageWidget,
@@ -279,7 +275,7 @@ class _RecipePageState extends State<RecipePage> {
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           recipe.title,
@@ -308,7 +304,7 @@ class _RecipePageState extends State<RecipePage> {
                                                             Icons.person,
                                                             size: 20,
                                                             color:
-                                                                Colors.white)),
+                                                            Colors.white)),
                                                   ),
                                                   SizedBox(width: 8),
                                                   Text(
@@ -338,30 +334,30 @@ class _RecipePageState extends State<RecipePage> {
                                               );
                                             } else {
                                               UserProfile creatorProfile =
-                                                  snapshot.data!;
+                                              snapshot.data!;
                                               return Row(
                                                 children: [
                                                   if (creatorProfile
-                                                          .profilePicturePath !=
+                                                      .profilePicturePath !=
                                                       null)
                                                     FutureBuilder<String?>(
                                                       future: _storageService
                                                           .getDownloadURL(
-                                                              creatorProfile
-                                                                  .profilePicturePath!),
+                                                          creatorProfile
+                                                              .profilePicturePath!),
                                                       builder: (context,
                                                           profilePictureSnapshot) {
                                                         if (profilePictureSnapshot
-                                                                .connectionState ==
+                                                            .connectionState ==
                                                             ConnectionState
                                                                 .waiting) {
                                                           return Container(
                                                             height: 20,
                                                             width: 20,
                                                             decoration:
-                                                                BoxDecoration(
+                                                            BoxDecoration(
                                                               color:
-                                                                  Colors.grey,
+                                                              Colors.grey,
                                                               shape: BoxShape
                                                                   .circle,
                                                             ),
@@ -374,30 +370,30 @@ class _RecipePageState extends State<RecipePage> {
                                                                         .white)),
                                                           );
                                                         } else if (profilePictureSnapshot
-                                                                .hasError ||
+                                                            .hasError ||
                                                             !profilePictureSnapshot
                                                                 .hasData ||
                                                             profilePictureSnapshot
-                                                                    .data ==
+                                                                .data ==
                                                                 null) {
                                                           return Icon(
                                                               Icons.person,
                                                               size: 20,
                                                               color:
-                                                                  Colors.grey);
+                                                              Colors.grey);
                                                         } else {
                                                           return ClipOval(
                                                             child:
-                                                                CachedNetworkImage(
+                                                            CachedNetworkImage(
                                                               imageUrl:
-                                                                  profilePictureSnapshot
-                                                                      .data!,
+                                                              profilePictureSnapshot
+                                                                  .data!,
                                                               placeholder: (context,
-                                                                      url) =>
+                                                                  url) =>
                                                                   CircularProgressIndicator(),
                                                               errorWidget: (context,
-                                                                      url,
-                                                                      error) =>
+                                                                  url,
+                                                                  error) =>
                                                                   Icon(Icons
                                                                       .error),
                                                               width: 20,
@@ -418,7 +414,7 @@ class _RecipePageState extends State<RecipePage> {
                                                           color: Colors.grey),
                                                       softWrap: true,
                                                       overflow:
-                                                          TextOverflow.visible,
+                                                      TextOverflow.visible,
                                                     ),
                                                   ),
                                                 ],

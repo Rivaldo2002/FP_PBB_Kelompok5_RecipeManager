@@ -3,7 +3,7 @@ class Recipe {
   String imagePath;
   String title;
   String description;
-  String? categoryId; // Made optional
+  String? categoryId;
   String createdBy;
   DateTime createdTime;
 
@@ -12,7 +12,7 @@ class Recipe {
     required this.imagePath,
     required this.title,
     required this.description,
-    this.categoryId, // Made optional
+    this.categoryId,
     required this.createdBy,
     required this.createdTime,
   });

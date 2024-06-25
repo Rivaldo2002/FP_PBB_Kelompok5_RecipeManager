@@ -10,6 +10,7 @@ import 'package:fp_recipemanager/services/user_profile_service.dart';
 import 'package:fp_recipemanager/services/category_service.dart';
 import 'package:fp_recipemanager/models/user_profile.dart';
 import 'package:fp_recipemanager/models/category.dart';
+import 'package:fp_recipemanager/components/bookmark_button.dart';
 
 class RecipeDetailPage extends StatefulWidget {
   final Recipe recipe;
@@ -93,60 +94,93 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     future: _storageService.getDownloadURL(recipe.imagePath),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(16.0),
-                          child: Container(
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.width,
-                            color: Colors.grey,
-                            child: Center(
-                              child: Icon(
-                                Icons.fastfood,
-                                size: 100,
-                                color: Colors.white,
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16.0),
+                              child: Container(
+                                width: double.infinity,
+                                height: MediaQuery.of(context).size.width,
+                                color: Colors.grey,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.fastfood,
+                                    size: 100,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: BookmarkButton(
+                                recipeId: recipe.recipeId,
+                              ),
+                            ),
+                          ],
                         );
                       } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(16.0),
-                          child: Container(
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.width,
-                            color: Colors.grey,
-                            child: Center(
-                              child: Icon(
-                                Icons.fastfood,
-                                size: 100,
-                                color: Colors.white,
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16.0),
+                              child: Container(
+                                width: double.infinity,
+                                height: MediaQuery.of(context).size.width,
+                                color: Colors.grey,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.fastfood,
+                                    size: 100,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: BookmarkButton(
+                                recipeId: recipe.recipeId,
+                              ),
+                            ),
+                          ],
                         );
                       } else {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(16.0),
-                          child: CachedNetworkImage(
-                            imageUrl: snapshot.data!,
-                            placeholder: (context, url) => Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.width,
-                              color: Colors.grey,
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.width,
-                              color: Colors.grey,
-                              child: Center(
-                                child: Icon(Icons.error),
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16.0),
+                              child: CachedNetworkImage(
+                                imageUrl: snapshot.data!,
+                                placeholder: (context, url) => Container(
+                                  width: double.infinity,
+                                  height: MediaQuery.of(context).size.width,
+                                  color: Colors.grey,
+                                  child: Center(child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  width: double.infinity,
+                                  height: MediaQuery.of(context).size.width,
+                                  color: Colors.grey,
+                                  child: Center(
+                                    child: Icon(Icons.error),
+                                  ),
+                                ),
+                                width: double.infinity,
+                                height: MediaQuery.of(context).size.width,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.width,
-                            fit: BoxFit.cover,
-                          ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: BookmarkButton(
+                                recipeId: recipe.recipeId,
+                              ),
+                            ),
+                          ],
                         );
                       }
                     },

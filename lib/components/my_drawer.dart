@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fp_recipemanager/components/my_drawer_tile.dart';
 import 'package:fp_recipemanager/pages/category/category_page.dart';
+import 'package:fp_recipemanager/pages/recipe/bookmarked_recipe_page.dart';
 import 'package:fp_recipemanager/pages/recipe/my_recipe_page.dart';
 import 'package:fp_recipemanager/pages/profile/user_profile_page.dart';
 import 'package:fp_recipemanager/services/user_profile_service.dart';
@@ -73,6 +74,11 @@ class _MyDrawerState extends State<MyDrawer> {
               text: "M Y  R E C I P E S", icon: Icons.fastfood, onTap: () {
             Navigator.pop(context);
             Navigator.push(context, MaterialPageRoute(builder: (context) => MyRecipePage(),),);
+          }),
+          MyDrawerTile(
+              text: "B O O K M A R K S", icon: Icons.bookmark, onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => BookmarkedRecipesPage(),),);
           }),
           if (isAdmin)
             MyDrawerTile(
